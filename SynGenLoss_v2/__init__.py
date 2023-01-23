@@ -1,1 +1,0 @@
-import SynGenLoss_v2.Model1 
