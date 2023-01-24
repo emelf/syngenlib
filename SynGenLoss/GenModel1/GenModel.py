@@ -92,6 +92,7 @@ class GeneratorModel1(GeneratorModel1_If_in):
 
     def get_P_losses(self, P_pu: float, Q_pu: float, V_t: float) -> GenLossRes:
         I_a, I_f, _ = self._calc_currents(P_pu, Q_pu, V_t)
+        print(I_f)
         P_loss_stator, P_loss_rotor, P_loss_core = self._calc_losses_pu(V_t, I_a, I_f)
         gen_loss_res = GenLossRes(P_pu, P_loss_rotor, P_loss_stator, P_loss_core, self.md.P_bn+self.md.P_wfn)
         return gen_loss_res 

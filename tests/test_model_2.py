@@ -8,10 +8,10 @@ currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentfram
 parentdir = os.path.dirname(currentdir)
 sys.path.insert(0, parentdir)
 
-from SynGenLoss.GenModel1.example_gens import Gen103MVA 
+from SynGenLoss.GenModel2.example_gens import Gen103MVA 
 
 
-class TestModel1(unittest.TestCase): 
+class TestModel2(unittest.TestCase): 
     test_gen = Gen103MVA
     P_tests = [0.900, 0.675, 0.450, 0.225, 1.000, 0.750, 0.500, 0.250]
     cos_phi_tests = [0.9, 0.9, 0.9, 0.9, 1.0, 1.0, 1.0, 1.0]
@@ -71,7 +71,7 @@ class TestModel1(unittest.TestCase):
             ia, ifd, delta = self.test_gen._calc_currents(self.P_tests[i], self.Q_tests[i], 1.0)
             
             self.assertAlmostEqual(ia * self.test_gen.md.Ia_nom_A, self.I_a_tests[i], places=1, msg=f"I_a error at idx={i}")
-            self.assertAlmostEqual(ifd * self.test_gen.md.If_nom_A, self.I_f_calc_tests[i], places=0, msg=f"I_f error at idx={i}")
+            self.assertAlmostEqual(ifd * self.test_gen.md.I_f_base, self.I_f_calc_tests[i], places=0, msg=f"I_f error at idx={i}")
     
     
 if __name__ == "__main__": 

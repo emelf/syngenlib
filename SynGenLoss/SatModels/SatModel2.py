@@ -1,31 +1,44 @@
 import numpy as np
+from numpy import cos, sin
 
 class SatModelDataClass2: 
     """All values are in pu. """
-    def __init__(self, bv: float, k: float, Cm: float, m: int, Ra_70: float, Xd_sat: float, Xq_sat: float, Xp: float) -> None: 
-        self.bv = bv 
-        self.k = k 
-        self.Cm = Cm 
-        self.m = m 
-        self.Ra_70 = Ra_70 
-        self.Xd_sat = Xd_sat 
-        self.Xq_sat = Xq_sat 
-        self.Xp = Xp 
+    def __init__(self, X_d_u: float, X_q_u: float, X_l: float, R_a: float, SG10: float, SG12: float) -> None: 
+        """X_d_u -> Unsaturated d-axis reactance [pu] \n 
+        X_l -> Leakage reactance [pu] \n 
+        R_a -> Nominal stator resistance [pu] \n 
+        SG10 -> Saturation coefficient at nominal voltage [.] \n 
+        SG12 -> Saturation coefficient at 1.2 pu voltage [.] \n """
+        self.X_d_u = X_d_u
+        self.X_q_u = X_q_u
+        self.X_l = X_l
+        self.R_a = R_a 
+        self.SG10 = SG10 
+        self.SG12 = SG12 
+
+        self.X_ad_u = self.X_d_u - self.X_l
+        self.exp = np.log(1.2 * self.SG12 / self.SG10) / np.log(1.2)
+
 
 
 class SaturationModel2: 
-    """This saturation model is based on four parameters obtained from the open-circuit characteristic. Saturation is calculated through the Potier's reactance. """
+    """NOTE: Assumes the power factory model for saturation (exponential model) and that the q-axis reactance remains unsaturated.  """
     def __init__(self, model_data: SatModelDataClass2): 
         self.md = model_data
-        self.ep_threshold = 0.55
         
-    def calc_ifd(self, Vt, ia, phi) -> float: 
-        delta = np.arctan(ia*(self.md.Xq_sat*np.cos(phi)-(self.md.Ra_70*np.sin(phi)))/(Vt+(self.md.Ra_70*ia*np.cos(phi))+self.md.Xq_sat*ia*np.sin(phi))) #Power load angle 
-        egu = Vt*np.cos(delta) + (self.md.Ra_70*ia*np.cos(delta+phi)) + self.md.Xd_sat*ia*np.sin(delta+phi) 
-        th = np.arctan(ia*(self.md.Xp*np.cos(phi) - self.md.Ra_70*np.sin(phi)) / (Vt + (self.md.Ra_70*ia*np.cos(phi)) + self.md.Xp*ia*np.sin(phi)) ) #Potiervinkel 
-        ep = Vt*np.cos(th) + (self.md.Ra_70*ia*np.cos(th+phi)) + self.md.Xp*ia*np.sin(th+phi) 
-        ifu = egu/self.md.bv #Field current at the air-gap line  
-        ep_bool = ep > self.ep_threshold #Lager en array av True eller False (1 eller 0) slik at ifs kan lett regnes ut av i neste linje i mange tilfeller samtidig
-        ifs = ((ep + self.md.Cm*ep**self.md.m)*self.md.k - ep/self.md.bv) * ep_bool #Field inkludert saturation
-        ifd = (ifu + ifs) 
-        return ifd, delta, egu
+    def calc_ifd(self, V_t, I_a, phi) -> float: 
+        delta = np.arctan(I_a*(self.md.X_q_u*np.cos(phi)-(self.md.R_a*np.sin(phi)))/(V_t+(self.md.R_a*I_a*np.cos(phi))+self.md.X_q_u*I_a*np.sin(phi))) #Power load angle 
+        e_d = V_t * sin(delta)
+        e_q = V_t * cos(delta) 
+        i_d = I_a * sin(delta + phi) 
+        i_q = I_a * cos(delta + phi) 
+        psi_d = e_q + self.md.R_a*i_q 
+        psi_q = -e_d - self.md.R_a*i_d 
+        psi_m = np.sqrt((psi_d + self.md.X_l*i_d)**2 + (psi_q + self.md.X_l*i_q)**2)
+
+        c_sat = self.md.SG10 * psi_m**self.md.exp / psi_m
+        sat_d = 1 / (1 + c_sat)
+        X_ad_sat = self.md.X_ad_u * sat_d
+        X_d_sat = X_ad_sat + self.md.X_l 
+        I_fd = (e_q + self.md.R_a*i_q + X_d_sat*i_d) / X_ad_sat 
+        return I_fd, delta, psi_m
