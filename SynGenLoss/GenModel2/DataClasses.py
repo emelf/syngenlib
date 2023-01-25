@@ -22,26 +22,29 @@ class GenDataClass2:
         self.Sn_mva = S_n_mva
         self.V_nom_kV = V_nom_kV
         self.cos_phi = cos_phi
-        self.Ia_nom_A = S_n_mva*1e6/(sqrt(3)*V_nom_kV*1e3)
+        self.I_a_nom_A = S_n_mva*1e6/(sqrt(3)*V_nom_kV*1e3)
         self.I_f_base = I_f_base
         self.R_a_nom, self.R_f_nom, self.X_d_u, self.X_q_u, self.X_l = R_a_nom, R_f_nom, X_d_u, X_q_u, X_l
         self.X_ad_u = self.X_d_u - self.X_l 
         self.X_aq_u = self.X_q_u - self.X_l
 
-    def nominal_losses(self, V_nom: float, I_fd_pu_nom: float, P_sn_kW: float, P_rn_kW: float,
+    def nominal_losses(self, V_nom: float, I_fd_pu_nom: float, P_sn_kW: float, P_rn_kW: float, P_exn_kW: float,
                        P_cn_kW: float, P_const_kW: float): 
         """
         V_nom: The voltage at which the losses were estimated. 
         P_sn_kW: Power losses [kW] in stator (+ stray) at nominal oeprating point. \n 
         P_rn_kW: Power losses [kW] in rotor (field + brushes) at nominal operating point. \n 
+        P_exn_kW: Power losses [kW] in the static exciter (set to 0 if unknown) \n
         P_cn_kW: Power losses [kW] in the core at nominal voltage \n 
         P_const_kW: Power losses [kW] that is constant (bearing + friction and windage) """
         self.V_nom = V_nom
+        self.I_fd_pu_nom = I_fd_pu_nom
         self.P_sn = P_sn_kW / self.Sn_mva / 1000 # Convert to pu 
         self.P_rn = P_rn_kW / self.Sn_mva / 1000
+        self.P_exn = P_exn_kW / self.Sn_mva / 1000
         self.P_cn = P_cn_kW / self.Sn_mva / 1000
         self.P_const = P_const_kW  / self.Sn_mva / 1000
-
+        
         self.R_st = self.P_sn # Assumes I_a = 1.0 pu 
         self.R_rt = self.P_rn/I_fd_pu_nom**2 
 

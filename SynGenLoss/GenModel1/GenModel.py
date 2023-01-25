@@ -2,6 +2,7 @@ import numpy as np
 from typing import Optional, Tuple
 from SynGenLoss.SatModels.SatModel1 import SaturationModel1 
 from .DataClasses import GenDataClass1
+from ..utils import GenLossRes
 
 def get_core_losses(Vt: float, gen_data: GenDataClass1) -> float: 
     """Extrapolates the constant losses with respect to the terminal voltage. \n 
@@ -16,7 +17,7 @@ def get_core_losses(Vt: float, gen_data: GenDataClass1) -> float:
 def get_rotor_loss(If: float, gen_data: GenDataClass1) -> float: 
     """Extrapolates the rotor copper, brush, and exciter losses from nominal values using the field current If. \n 
     If: Field current of given operating point. \n """
-    P_rotor = (gen_data.P_fn + gen_data.P_brn)*(If/gen_data.If_nom)**2 + gen_data.P_exn*If/gen_data.If_nom
+    P_rotor = (gen_data.P_fn + gen_data.P_brn)*(If/gen_data.If_nom)**2
     return P_rotor
 
 def get_stator_loss(Ia: float, gen_data: GenDataClass1) -> float:
@@ -28,17 +29,9 @@ def get_stator_loss(Ia: float, gen_data: GenDataClass1) -> float:
     P_stator = (gen_data.P_an + gen_data.P_sn)*(Ia/gen_data.Ia_nom)**2
     return P_stator
 
-
-class GenLossRes: 
-    def __init__(self, P_in: float, P_rotor: float, P_stator: float, P_core: float, P_const: float) -> None: 
-        self.P_in = P_in
-        self.P_const_pu = P_const 
-        self.P_rotor_pu = P_rotor 
-        self.P_stator_pu = P_stator 
-        self.P_core_pu = P_core 
-        self.eff = P_in / (P_in + P_rotor + P_stator + P_core + P_const) 
-        self.P_loss_tot = P_rotor + P_stator + P_core + P_const
-        
+def get_exciter_loss(If:float, gen_data: GenDataClass1) -> float: 
+    return gen_data.P_exn*If/gen_data.If_nom
+     
 
 class GeneratorModel1_If_in: 
     """ Main class for the generator loss model. Requires model data and saturation model to be defined before use. """
@@ -56,13 +49,14 @@ class GeneratorModel1_If_in:
         returns an instance of the GenLossRes class. """
         P_loss_stator = get_stator_loss(I_a, self.md)
         P_loss_rotor = get_rotor_loss(I_f, self.md)
+        P_loss_exciter = get_exciter_loss(I_f, self.md)
         P_loss_core = get_core_losses(V_t, self.md)
-        return P_loss_stator, P_loss_rotor, P_loss_core
+        return P_loss_stator, P_loss_rotor, P_loss_exciter, P_loss_core
 
     def get_P_losses(self, P_pu: float, Q_pu: float, V_t: float, I_f: float) -> GenLossRes: 
         I_a = self._calc_currents(P_pu, Q_pu, V_t) 
-        P_loss_stator, P_loss_rotor, P_loss_core = self._calc_losses_pu(V_t, I_a, I_f)
-        gen_loss_res = GenLossRes(P_pu, P_loss_rotor, P_loss_stator, P_loss_core, self.md.P_bn+self.md.P_wfn)
+        P_loss_stator, P_loss_rotor, P_loss_exciter, P_loss_core = self._calc_losses_pu(V_t, I_a, I_f)
+        gen_loss_res = GenLossRes(P_pu, P_loss_rotor, P_loss_exciter, P_loss_stator, P_loss_core, self.md.P_bn+self.md.P_wfn)
         return gen_loss_res 
 
 
@@ -92,7 +86,6 @@ class GeneratorModel1(GeneratorModel1_If_in):
 
     def get_P_losses(self, P_pu: float, Q_pu: float, V_t: float) -> GenLossRes:
         I_a, I_f, _ = self._calc_currents(P_pu, Q_pu, V_t)
-        print(I_f)
-        P_loss_stator, P_loss_rotor, P_loss_core = self._calc_losses_pu(V_t, I_a, I_f)
-        gen_loss_res = GenLossRes(P_pu, P_loss_rotor, P_loss_stator, P_loss_core, self.md.P_bn+self.md.P_wfn)
+        P_loss_stator, P_loss_rotor, P_loss_exciter, P_loss_core = self._calc_losses_pu(V_t, I_a, I_f)
+        gen_loss_res = GenLossRes(P_pu, P_loss_rotor, P_loss_exciter, P_loss_stator, P_loss_core, self.md.P_bn+self.md.P_wfn)
         return gen_loss_res 
