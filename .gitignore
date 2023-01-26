@@ -124,5 +124,5 @@ dmypy.json
 .pyre/
 
 # Untracked files: 
-# /testing.ipynb
+/Admin
 # /testing.v2.ipynb

@@ -1,6 +1,10 @@
 from math import sqrt, atan, pi
 import cmath as cm
-from typing import Sequence
+from typing import Sequence, Optional, Tuple
+import numpy as np
+
+from SynGenLib.models.SatModels.SatModel1 import SaturationModel1 
+from ...utils import GenLossRes
 
 class GenDataClass1: 
     """A dataclass for storing generator model parameters. \n 
@@ -58,3 +62,60 @@ class GenDataClass1:
     def get_nominal_losses(self) -> Sequence[float]: 
         return self.P_an, self.P_sn, self.P_fn, self.P_brn, self.P_exn, self.P_cn, self.P_wfn, self.P_bn
 
+
+class GeneratorModel1_If_in: 
+    """ Main class for the generator loss model. Requires model data and saturation model to be defined before use. """
+    def __init__(self, model_data: GenDataClass1) -> None: 
+        self.md = model_data
+    
+    def _calc_currents(self, P_pu: float, Q_pu: float, V_t: float) -> float: 
+        """Calculates the stator and rotor currents (and load angle) based on given inputs. \n
+        returns ia"""
+        ia = np.sqrt(P_pu**2 + Q_pu**2)/V_t
+        return ia
+
+    def _calc_losses_pu(self, V_t: float, I_a: float, I_f: float) -> Tuple[float, float, float]: 
+        """Calculate generator losses based on P, Q, and Vt. \n
+        returns an instance of the GenLossRes class. """
+        P_loss_stator = (self.md.P_an + self.md.P_sn)*(I_a/self.md.Ia_nom)**2
+        P_loss_rotor = (self.md.P_fn + self.md.P_brn)*(I_f/self.md.If_nom)**2
+        P_loss_exciter = self.md.P_exn*I_f/self.md.If_nom
+        P_loss_core = self.md.P_cn*(V_t/self.md.V_nom)**2
+        return P_loss_stator, P_loss_rotor, P_loss_exciter, P_loss_core
+
+    def get_P_losses(self, P_pu: float, Q_pu: float, V_t: float, I_f: float) -> GenLossRes: 
+        I_a = self._calc_currents(P_pu, Q_pu, V_t) 
+        P_loss_stator, P_loss_rotor, P_loss_exciter, P_loss_core = self._calc_losses_pu(V_t, I_a, I_f)
+        gen_loss_res = GenLossRes(P_pu, P_loss_rotor, P_loss_exciter, P_loss_stator, P_loss_core, self.md.P_bn+self.md.P_wfn)
+        return gen_loss_res 
+
+
+class GeneratorModel1(GeneratorModel1_If_in): 
+    def __init__(self, model_data: GenDataClass1, sat_model: SaturationModel1): 
+        self.sm = sat_model
+        super().__init__(model_data)
+    
+    def _calc_phi(self, P_el:float, Q_el:float) -> float:
+        if P_el == 0 and Q_el == 0: 
+            return 0
+        elif P_el == 0 and not Q_el == 0: 
+            return np.pi/2 * np.sign(Q_el)
+        else: 
+            return np.arctan(Q_el/P_el) 
+
+    def _calc_currents(self, P_pu: float, Q_pu: float, V_t: float) -> Tuple[float, float, float]: 
+        """Calculates the stator and rotor currents (and load angle) based on given inputs. \n
+        returns ia [pu], ifd [pu], delta [rad]"""
+        ia = np.sqrt(P_pu**2 + Q_pu**2)/V_t
+        if hasattr(ia, "__len__"): #Checks if ia is a list/array or a scalar 
+            phi = np.array([self._calc_phi(P_el, Q_el) for P_el, Q_el in zip(P_pu, Q_pu)])
+        else: 
+            phi = self._calc_phi(P_pu, Q_pu)
+        ifd, delta, _ = self.sm.calc_ifd(V_t, ia, phi)
+        return ia, ifd, delta
+
+    def get_P_losses(self, P_pu: float, Q_pu: float, V_t: float) -> GenLossRes:
+        I_a, I_f, _ = self._calc_currents(P_pu, Q_pu, V_t)
+        P_loss_stator, P_loss_rotor, P_loss_exciter, P_loss_core = self._calc_losses_pu(V_t, I_a, I_f)
+        gen_loss_res = GenLossRes(P_pu, P_loss_rotor, P_loss_exciter, P_loss_stator, P_loss_core, self.md.P_bn+self.md.P_wfn)
+        return gen_loss_res 

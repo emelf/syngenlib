@@ -1,8 +1,6 @@
 import numpy as np
-from SynGenLib.SatModels.SatModel1 import SaturationModel1, SatModelDataClass1
-from .DataClasses import GenDataClass1
-from .GenModel import GeneratorModel1
-
+from ...models.SatModels.SatModel1 import SaturationModel1, SatModelDataClass1
+from ...models.PowerLosses.LossModel1 import GenDataClass1, GeneratorModel1
 
 # 103 MVA Generator: 
 model_data = GenDataClass1() 

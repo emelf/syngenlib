@@ -1,2 +1,1 @@
-import SynGenLib.GenModel1 
-import SynGenLib.GenModel1
+from SynGenLib import example_gens, models, utils
