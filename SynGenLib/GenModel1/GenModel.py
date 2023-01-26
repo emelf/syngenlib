@@ -1,6 +1,6 @@
 import numpy as np
 from typing import Optional, Tuple
-from SynGenLoss.SatModels.SatModel1 import SaturationModel1 
+from SynGenLib.SatModels.SatModel1 import SaturationModel1 
 from .DataClasses import GenDataClass1
 from ..utils import GenLossRes
 

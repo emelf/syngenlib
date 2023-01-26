@@ -1,5 +1,5 @@
 import numpy as np
-from SynGenLoss.SatModels.SatModel1 import SaturationModel1, SatModelDataClass1
+from SynGenLib.SatModels.SatModel1 import SaturationModel1, SatModelDataClass1
 from .DataClasses import GenDataClass1
 from .GenModel import GeneratorModel1
 

@@ -8,7 +8,7 @@ currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentfram
 parentdir = os.path.dirname(currentdir)
 sys.path.insert(0, parentdir)
 
-from SynGenLoss.GenModel2.example_gens import Gen103MVA, Gen103MVA_If_in, Gen103MVA_sat_model
+from SynGenLib.GenModel2.example_gens import Gen103MVA, Gen103MVA_If_in, Gen103MVA_sat_model
 
 
 class TestModel2(unittest.TestCase): 
