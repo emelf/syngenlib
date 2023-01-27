@@ -31,8 +31,8 @@ class CDFuncs1:
             Q_g, E_q = X
             a = E_q*xq_pu / (V_g*(xd_pu-xq_pu))
             b = np.sqrt(a**2 + 8) 
-            cos_delta = 0.25 * (b - a) #stability factor ?
-            delta = np.arccos(cos_delta) 
+            cos_delta = np.clip(0.25 * (b - a), -1, 1) #stability factor ?
+            delta = np.arccos(cos_delta)
             c = E_q*V_g / xd_pu * np.sin(delta) 
             d = 0.5*V_g**2 * (xd_pu - xq_pu)/xd_pu * xq_pu * np.sin(2*delta)
             P = c + d 
@@ -136,16 +136,22 @@ class CapabilityDiagram1:
 class CapabilityDiagram1Approx(CapabilityDiagram1): 
     """This class assumes no voltage dependency on the generator limits. Therefore, a polygon of 2*N_points is constructed using the module "shapely". \n 
     This is much faster compared to calculating the limits every time. """
-    def __init__(self, cap_diag: CapabilityDiagram1, N_points: Optional[int]=100, V_nom: Optional[float]=1.0): 
+    def __init__(self, cap_diag: CapabilityDiagram1, N_points: Optional[int]=100, V_nom: Optional[float]=1.0, tol: Optional[float]=1e-3): 
+        """N_points: how many points that should make up the capability diagram. \n 
+        V_nom: The nominal voltage used for making the limits of the capability diagram. \n
+        tol: The allowable violation of Q limits."""
         self.CD = cap_diag 
         self.N_points = N_points
         self.V_nom = V_nom
+        self.tol = tol
         points_1 = [] 
         points_2 = []
-        for P in np.linspace(self.CD.md.P_min, self.CD.md.P_max, N_points):    
+        for P in np.linspace(self.CD.md.P_min-2*self.tol, self.CD.md.P_max, N_points, endpoint=True):    
             P_new, Q_min, Q_max = self.CD.get_Q_lims(self.V_nom, P)
-            points_1.append(Point(Q_min, P_new))
-            points_2.append(Point(Q_max, P_new))
+            # points_1.append(Point(Q_min, P_new))
+            # points_2.append(Point(Q_max, P_new))
+            points_1.append((Q_min - self.tol, P_new + self.tol))
+            points_2.append((Q_max + self.tol, P_new + self.tol))
         self.CD_poly = Polygon(points_1 + points_2[::-1]) 
     
     def get_Q_lims(self, P_g: float) -> Tuple[float, float, float]:
@@ -155,9 +161,9 @@ class CapabilityDiagram1Approx(CapabilityDiagram1):
         lims = np.array(self.CD_poly.intersection(line).coords)
         if lims.shape[0] == 2:
             min_val, max_val = lims
-            return min_val[0], max_val[0]
+            return P_g, min_val[0], max_val[0]
         else: 
-            return 0.0, 0.0
+            return P_g, 0.0, 0.0
     
     def is_inside(self, P_g, Q_g): 
         return self.CD_poly.contains(Point(Q_g, P_g))

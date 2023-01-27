@@ -48,9 +48,10 @@ class TestModel1(unittest.TestCase):
                                self.P_be_tests[0] + self.P_wf_tests[0], places=1) 
 
     def test_all_abjora(self): 
+        calc_eff = []
         for i in range(len(self.P_tests)): 
             res_loss = self.test_gen.get_P_losses(self.P_tests[i], self.Q_tests[i], 1.0)
-
+            calc_eff.append(res_loss.eff*100)
             self.assertAlmostEqual(res_loss.P_core_pu*self.test_gen.md.Sn_mva*1000, 
                                    self.P_c_tests[i], 
                                    places=-1, msg=f"Error at idx={i}")
@@ -66,6 +67,9 @@ class TestModel1(unittest.TestCase):
             self.assertAlmostEqual(res_loss.P_const_pu*self.test_gen.md.Sn_mva*1000, 
                                    self.P_be_tests[i] + self.P_wf_tests[i], 
                                    places=-1, msg=f"Error at idx={i}") 
+        calc_eff = np.array(calc_eff) 
+        eff_diff = calc_eff - np.array(self.eff_tests)
+        print(f"Efficiency abs diff = {np.sum(np.abs(eff_diff))}")
 
     def test_calc_currents(self): 
         for i in range(len(self.P_tests)): 
