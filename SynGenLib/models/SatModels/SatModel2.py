@@ -2,22 +2,47 @@ import numpy as np
 from numpy import cos, sin
 from typing import Tuple
 from scipy.optimize import root
+from dataclasses import dataclass 
 
+# class SatModelDataClass2: 
+#     """All values are in pu. """
+#     def __init__(self, X_d_u: float, X_q_u: float, X_l: float, R_a: float, SG10: float, SG12: float) -> None: 
+#         """X_d_u -> Unsaturated d-axis reactance [pu] \n 
+#         X_l -> Leakage reactance [pu] \n 
+#         R_a -> Nominal stator resistance [pu] \n 
+#         SG10 -> Saturation coefficient at nominal voltage [.] \n 
+#         SG12 -> Saturation coefficient at 1.2 pu voltage [.] \n """
+#         self.X_d_u = X_d_u
+#         self.X_q_u = X_q_u
+#         self.X_l = X_l
+#         self.R_a = R_a 
+#         self.SG10 = SG10 
+#         self.SG12 = SG12 
+
+#         self.X_ad_u = self.X_d_u - self.X_l
+#         self.exp = np.log(1.2 * self.SG12 / self.SG10) / np.log(1.2)
+
+@dataclass
 class SatModelDataClass2: 
-    """All values are in pu. """
-    def __init__(self, X_d_u: float, X_q_u: float, X_l: float, R_a: float, SG10: float, SG12: float) -> None: 
-        """X_d_u -> Unsaturated d-axis reactance [pu] \n 
-        X_l -> Leakage reactance [pu] \n 
-        R_a -> Nominal stator resistance [pu] \n 
-        SG10 -> Saturation coefficient at nominal voltage [.] \n 
-        SG12 -> Saturation coefficient at 1.2 pu voltage [.] \n """
-        self.X_d_u = X_d_u
-        self.X_q_u = X_q_u
-        self.X_l = X_l
-        self.R_a = R_a 
-        self.SG10 = SG10 
-        self.SG12 = SG12 
+    """A dataclass for the saturation model 2. 
+    
+    Attributes 
+    ----------
+    X_d_u: Unsaturated d-axis synchronous reactance [pu] 
+    X_q_u: Unsaturated q-axis synchronous reactance [pu]
+    X_l: Leakage reactance [pu]
+    R_a: Armature resistance at nominal operating point [pu] 
+    SG10: Saturation parameter at V_g = 1.0 pu [.]
+    SG12: Saturation parameter at V_g = 1.2 pu [.]
+    """
+    X_d_u: float 
+    X_q_u: float 
+    X_l: float 
+    R_a: float 
+    SG10: float 
+    SG12: float 
 
+    def __post_init__(self): 
         self.X_ad_u = self.X_d_u - self.X_l
         self.exp = np.log(1.2 * self.SG12 / self.SG10) / np.log(1.2)
 
