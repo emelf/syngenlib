@@ -87,6 +87,10 @@ class TestModel1(unittest.TestCase):
             Ifd_calc_error.append((ifd*self.I_f_base-self.I_f_calc_tests[i])**2)
 
         print(f"Sum of squared meas error: {sum(Ifd_meas_error):.3f}, Sum of squared calc error: {sum(Ifd_calc_error):.3f}")
+
+    def test_dany(self): 
+        ia, ifd, delta = Gen103MVA._calc_currents(0.8985, 0.2583, 1.0)
+        print(f"ia = {ia}, ifd={ifd*525.15}, delta = {delta}")
     
 if __name__ == "__main__": 
     unittest.main() 
