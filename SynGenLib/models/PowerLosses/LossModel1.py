@@ -2,6 +2,7 @@ from math import sqrt, atan, pi
 import cmath as cm
 from typing import Sequence, Optional, Tuple
 import numpy as np
+import numdifftools as nd 
 
 from SynGenLib.models.SatModels.SatModel1 import SaturationModel1 
 from ...utils import GenLossRes
@@ -67,6 +68,8 @@ class GeneratorModel1_If_in:
     """ Main class for the generator loss model. Requires model data and saturation model to be defined before use. """
     def __init__(self, model_data: GenDataClass1) -> None: 
         self.md = model_data
+        self.u_names = ("P_g", "V_g")
+        self.y_names = ("Q_g")
     
     def _calc_currents(self, P_pu: float, Q_pu: float, V_t: float) -> float: 
         """Calculates the stator and rotor currents (and load angle) based on given inputs. \n
