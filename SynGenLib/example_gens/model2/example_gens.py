@@ -22,7 +22,7 @@ model_data_103.standard_params(S_n_mva=gd["S_n_mva"], V_nom_kV=gd["V_nom_kV"], c
 model_data_103.nominal_losses(V_nom=gd["V_nom"], I_fd_pu_nom=gd["I_fd_pu_nom"], P_sn_kW=gd["P_sn_kW"], P_rn_kW=gd["P_rn_kW"], P_exn_kW=gd["P_exn_kW"], 
                               P_cn_kW=gd["P_cn_kW"], P_const_kW=gd["P_const_kW"])
 
-sat_model_data_103 = SatModelDataClass2(X_d_u=gd["X_d_u"], X_q_u=gd["X_d_u"], X_l=gd["X_l"], R_a=gd["R_a_nom"], SG10=gd["SG10"], SG12=gd["SG12"])
+sat_model_data_103 = SatModelDataClass2(X_d_u=gd["X_d_u"], X_q_u=gd["X_q_u"], X_l=gd["X_l"], R_a=gd["R_a_nom"], SG10=gd["SG10"], SG12=gd["SG12"])
 sat_model_103 = SaturationModel2(sat_model_data_103)
 GenCD_data = CapabilityDataClass1(P_lims=(gd["P_min"], gd["P_max"]), X_d=gd["X_d_u"], X_q=gd["X_q_u"], R_a=gd["R_a_nom"], I_f_max=gd["I_f_max"])
 

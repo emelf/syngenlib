@@ -95,6 +95,7 @@ class TestModel2(unittest.TestCase):
         for i in range(len(self.P_tests)): 
             I_fd, delta, psi_m = self.sat_model.calc_ifd(1.0, self.I_a_tests[i]/self.I_a_base, self.phi_tests[i])
             # ia, ifd, delta = self.test_gen._calc_currents(self.P_tests[i], self.Q_tests[i], 1.0)
+            print(f"Pred I_f: {I_fd*self.I_f_base}, meas = {self.I_f_tests[i]}")
             Ifd_meas_error.append((I_fd*self.I_f_base-self.I_f_tests[i])**2)
             Ifd_calc_error.append((I_fd*self.I_f_base-self.I_f_calc_tests[i])**2)
 
