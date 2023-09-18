@@ -24,7 +24,7 @@ from dataclasses import dataclass
 
 @dataclass
 class SatModelDataClass3: 
-    """A dataclass for the saturation model 2. 
+    """A dataclass for the saturation model 3. 
     
     Attributes 
     ----------
