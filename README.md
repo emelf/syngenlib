@@ -1,4 +1,4 @@
-# syngenloss
+# syngenlib
 
 SynGenLoss is a Python coded library for estimating the steady-state power losses in wound-rotor synchronous generators. The three models in this library differs in the following way: <br> 
 Model 1 Uses [1] for its calculation model. Therefore, the Model 1 data class contains the nominal power losses for different generator components. <br> 

@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import Tuple
 
 @dataclass
 class GenDataClass: 
@@ -55,11 +56,11 @@ class GenLossRes:
         """Returns power losses in MW"""
         return S_base*self.P_loss_tot
     
-    def get_data_pu(self) -> (float, float, float, float, float): 
+    def get_data_pu(self) -> Tuple[float, float, float, float, float]: 
         """Returns (P_g_pu, Q_g_pu, V_g_pu, I_f_pu, P_loss_pu)"""
         return (self.P_g, self.Q_g, self.V_g, self.I_f, self.P_loss_tot)
     
-    def get_data(self, S_base) -> (float, float, float, float, float): 
+    def get_data(self, S_base) -> Tuple[float, float, float, float, float]: 
         """Returns (P_g_mw, Q_g_mvar, V_g_pu, I_f_pu, P_loss_mw)"""
         return (self.P_g*S_base, self.Q_g*S_base, self.V_g, self.I_f, self.get_losses_mw(S_base))
     

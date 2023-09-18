@@ -1,4 +1,5 @@
 import numpy as np 
+from typing import Tuple
 
 class CapabilityDiagram: 
     def __init__(self, X_d, E_q_max, delta_max, P_g_min, P_g_max): 
@@ -12,7 +13,7 @@ class CapabilityDiagram:
         self.q_f_1 = -1.0/self.X_d
         self.m = np.arctan(self.delta_max) 
 
-    def calc_stator_limit(self, P_g, V_g) -> (float, float):
+    def calc_stator_limit(self, P_g, V_g) -> Tuple[float, float]:
         if P_g <= V_g: 
             Q_max = np.sqrt(1.0*V_g - P_g**2) 
             return (-Q_max, Q_max)
@@ -20,21 +21,21 @@ class CapabilityDiagram:
             return (0, 0)
         
     
-    def calc_rotor_limit(self, P_g, V_g) -> (float, float): 
+    def calc_rotor_limit(self, P_g, V_g) -> Tuple[float, float]: 
         r_f = self.r_f_1 * V_g 
         q_f = self.q_f_1*V_g**2 
         Q_g_max = np.sqrt(r_f**2 - P_g**2) + q_f 
         Q_g_min = -np.sqrt(r_f**2 - P_g**2) + q_f 
         return (Q_g_min, Q_g_max) 
     
-    def calc_stab_limit(self, P_g, V_g) -> (float, float): 
+    def calc_stab_limit(self, P_g, V_g) -> Tuple[float, float]: 
         Q_g_min = self.m * P_g + self.q_f_1*V_g**2
         return (Q_g_min, None)
     
 
 if __name__ == "__main__": 
     import matplotlib.pyplot as plt 
-    CD1 = CapDiag(1.0, 1.8, np.pi/180*30, 0.1, 0.9)
+    CD1 = CapabilityDiagram(1.0, 1.8, np.pi/180*30, 0.1, 0.9)
     P_vals = np.linspace(1e-3, 1, 100)
     V_g = 1.0 
     Q_min_stator = []
