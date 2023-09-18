@@ -16,9 +16,9 @@ class CapabilityDiagram:
 
     def _calc_stator_limit(self, P_g, V_g) -> Tuple[float, float]:
         if P_g <= V_g: 
-            Q_max = np.sqrt(1.0*V_g - P_g**2) 
+            Q_max = np.sqrt((1.0*V_g)**2 - P_g**2) 
             return (-Q_max, Q_max)
-        elif P_g > self.P_g_max:
+        else:
             return (0, 0)
         
     
