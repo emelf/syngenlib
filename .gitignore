@@ -125,4 +125,4 @@ dmypy.json
 
 # Untracked files: 
 tests/
-# /testing.v2.ipynb
+/testing.ipynb

@@ -1,19 +1,20 @@
 import numpy as np 
 from typing import Tuple
+from .model_dataclass import GenDataClass    
 
 class CapabilityDiagram: 
-    def __init__(self, X_d, E_q_max, delta_max, P_g_min, P_g_max): 
-        self.X_d = X_d 
-        self.E_q_max = E_q_max
-        self.delta_max = delta_max
-        self.P_g_min = P_g_min 
-        self.P_g_max = P_g_max
+    def __init__(self, gen_data: GenDataClass): 
+        self.X_d = gen_data.X_d
+        self.E_q_max = gen_data.E_q_max
+        self.delta_max = gen_data.delta_max
+        self.P_g_min = gen_data.P_g_min_pu
+        self.P_g_max = gen_data.P_g_max_pu
 
         self.r_f_1 = self.E_q_max/self.X_d 
         self.q_f_1 = -1.0/self.X_d
         self.m = np.arctan(self.delta_max) 
 
-    def calc_stator_limit(self, P_g, V_g) -> Tuple[float, float]:
+    def _calc_stator_limit(self, P_g, V_g) -> Tuple[float, float]:
         if P_g <= V_g: 
             Q_max = np.sqrt(1.0*V_g - P_g**2) 
             return (-Q_max, Q_max)
@@ -21,16 +22,24 @@ class CapabilityDiagram:
             return (0, 0)
         
     
-    def calc_rotor_limit(self, P_g, V_g) -> Tuple[float, float]: 
+    def _calc_rotor_limit(self, P_g, V_g) -> Tuple[float, float]: 
         r_f = self.r_f_1 * V_g 
         q_f = self.q_f_1*V_g**2 
         Q_g_max = np.sqrt(r_f**2 - P_g**2) + q_f 
         Q_g_min = -np.sqrt(r_f**2 - P_g**2) + q_f 
         return (Q_g_min, Q_g_max) 
     
-    def calc_stab_limit(self, P_g, V_g) -> Tuple[float, float]: 
+    def _calc_stab_limit(self, P_g, V_g) -> Tuple[float, float]: 
         Q_g_min = self.m * P_g + self.q_f_1*V_g**2
         return (Q_g_min, None)
+    
+    def calc_Q_lims(self, P_g, V_g) -> Tuple[float, float]: 
+        Q_min_1, Q_max_1 = self._calc_stator_limit(P_g, V_g)
+        _, Q_max_2 = self._calc_rotor_limit(P_g, V_g)
+        Q_min_3, _ = self._calc_stab_limit(P_g, V_g)
+        Q_min = max((Q_min_1, Q_min_3))
+        Q_max = min((Q_max_1, Q_max_2))
+        return (Q_min, Q_max)
     
 
 if __name__ == "__main__": 
