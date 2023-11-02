@@ -1,5 +1,6 @@
 from dataclasses import dataclass
-from typing import Tuple
+from typing import Tuple, Optional
+from math import sqrt
 
 @dataclass
 class GenDataClass: 
@@ -9,7 +10,6 @@ class GenDataClass:
     V_nom_kV: Rated nominal voltage of the generator. [kV] \n
     cos_phi_nom: Power factor at nominal operating condition. [.] \n 
     X_d: Direct axis synchronous reactance of the generator. [pu] \n 
-    E_q_max: Internal voltage related to the rotor heating limit [pu] \n 
     delta_max: Rotor angle at stability limit [rad] \n 
     P_g_min_pu: Minimum active power [pu] \n 
     P_g_max_pu: Maximum active power [pu] \n 
@@ -17,13 +17,13 @@ class GenDataClass:
     P_loss_nom_rotor_pu: Rotor power losses at nominal operating point [pu] \n
     P_loss_nom_core_pu: Core power losses at nominal operating point [pu] \n
     P_loss_nom_const_pu: Constant power losses, e.g., friction and windage [pu] \n
+    E_q_max: Internal voltage related to the rotor heating limit [pu] \n 
     """
 
     S_n_mva: float 
     V_nom_kV: float 
     cos_phi_nom: float 
     X_d: float 
-    E_q_max: float 
     delta_max: float 
     P_g_min_pu: float 
     P_g_max_pu: float 
@@ -31,6 +31,41 @@ class GenDataClass:
     P_loss_nom_rotor_pu: float 
     P_loss_nom_core_pu: float 
     P_loss_nom_const_pu: float 
+    E_q_max: Optional[float] = None 
+
+    def __post_init__(self): 
+        P_nom = self.cos_phi_nom 
+        Q_nom = sqrt(1 - P_nom**2) 
+        self.E_q_nom = sqrt((1.0 + self.X_d*Q_nom)**2 + (self.X_d*P_nom)**2) 
+        if self.E_q_max is None: 
+            self.E_q_max = self.E_q_nom 
+        self.k_If = self.E_q_nom**(-1) 
+
+
+@dataclass
+class TrafoDataClass: 
+    """A dataclass for storing trafo model parameters. Used for plant loss calculations.
+    TODO: Include the compatibility with the capability diagram  
+
+    S_n_mva: Rated apparent power of the transformer. [MVA] \n 
+    V_nom_kV: Rated nominal voltage of the LV side of the transformer. [kV] \n
+    R_T: Transformer total series resistance [pu] \n 
+    X_T: Transformer total series reactance [pu] \n 
+    I_E: Excitation current (to shunt) [pu] \n 
+    P_Fe: Iron losses (shunt power losses) [pu] 
+    """
+
+    S_n_mva: float 
+    V_nom_kV: float 
+    R_T: float 
+    X_T: float 
+    I_E: float 
+    P_Fe: float
+
+    def __post_init__(self): 
+        self.Y_E = self.I_E 
+        self.G_Fe = self.P_Fe 
+        self.B_mu = sqrt(self.Y_E**2 - self.G_Fe**2)
 
 
 class GenLossRes: 
