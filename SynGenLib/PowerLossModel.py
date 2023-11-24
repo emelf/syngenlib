@@ -1,7 +1,7 @@
 from typing import Tuple
 import numpy as np
 
-from DataClasses import GenDataClass, PowerLossResult, TrafoDataClass
+from .DataClasses import GenDataClass, PowerLossResult, TrafoDataClass
 
 class GeneratorLossModel: 
     def __init__(self, model_data: GenDataClass): 

@@ -1,4 +1,4 @@
-from DataClasses import GenDataClass 
+from ..DataClasses import GenDataClass 
 import numpy as np 
 
 gen_103_mva = GenDataClass(S_n_mva=103, V_nom_kV=11, cos_phi_nom=0.9, 

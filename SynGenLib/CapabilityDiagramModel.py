@@ -1,6 +1,6 @@
 import numpy as np 
 from typing import Tuple, Optional
-from DataClasses import GenDataClass, TrafoDataClass
+from .DataClasses import GenDataClass, TrafoDataClass
 
 class CapabilityDiagram: 
     """This is the generator+trafo capability diagram constructor. 
@@ -26,7 +26,6 @@ class CapabilityDiagram:
     def _calc_rotor_limit(self, P, V) -> Tuple[float, float]: 
         r_f = self.gen_data.E_q_max*V/(self.trafo_data.tap_ratio*self.X_tot)
         q_f = -V**2/(self.trafo_data.tap_ratio**2 * self.X_tot)
-
         Q_g_max = np.sqrt(r_f**2 - P**2) + q_f 
         Q_g_min = -np.sqrt(r_f**2 - P**2) + q_f 
         return (Q_g_min, Q_g_max) 
