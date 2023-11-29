@@ -1,7 +1,7 @@
 from typing import Tuple
 import numpy as np
 
-from .DataClasses import GenDataClass, PowerLossResult, TrafoDataClass
+from .DataClasses import GenDataClass, GeneratorLossResult, TrafoDataClass
 
 class GeneratorLossModel: 
     def __init__(self, model_data: GenDataClass): 
@@ -31,10 +31,10 @@ class GeneratorLossModel:
         P_loss_core = self.md.P_loss_nom_core_pu*V_g**2
         return P_loss_stator, P_loss_rotor, P_loss_core
 
-    def get_P_losses(self, P_g_pu: float, Q_g_pu: float, V_g: float) -> PowerLossResult: 
+    def get_P_losses(self, P_g_pu: float, Q_g_pu: float, V_g: float) -> GeneratorLossResult: 
         I_a_pu, I_f_pu = self._calc_currents(P_g_pu, Q_g_pu, V_g) 
         P_loss_stator, P_loss_rotor, P_loss_core = self._calc_losses_pu(V_g, I_a_pu, I_f_pu)
-        gen_loss_res = PowerLossResult(P_g_pu, Q_g_pu, I_f_pu, V_g, P_loss_stator, P_loss_rotor, P_loss_core, self.md.P_loss_nom_const_pu)
+        gen_loss_res = GeneratorLossResult(P_g_pu, Q_g_pu, I_f_pu, V_g, P_loss_stator, P_loss_rotor, P_loss_core, self.md.P_loss_nom_const_pu)
         return gen_loss_res 
     
     def get_P_loss_grad_pu(self, P_g_pu: float, Q_g_pu: float, V_g: float) -> Tuple[float, float, float]: 
@@ -59,7 +59,7 @@ class GeneratorLossModel:
         return (dP_L_dP_g, dP_L_dQ_g, dP_L_dV_g) 
 
 
-class TransformerLossModel: 
+class TransformerLossModel: # TODO
     def __init__(self, trafo_data: TrafoDataClass): 
         self.md = trafo_data 
 

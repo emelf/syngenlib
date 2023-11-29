@@ -1,6 +1,6 @@
 import numpy as np 
 from typing import Tuple, Optional
-from .DataClasses import GenDataClass, TrafoDataClass
+from .DataClasses import GenDataClass, TrafoDataClass, CapabilityResult, CapabilityLimit
 
 class CapabilityDiagram: 
     """This is the generator+trafo capability diagram constructor. 
@@ -14,47 +14,77 @@ class CapabilityDiagram:
             self.trafo_data = TrafoDataClass(S_n_mva=self.gen_data.S_n_mva, 
                                              V_nom_kV=self.gen_data.V_nom_kV, 
                                              V_SCH=0.0, I_E=0.0, P_Cu=0.0, P_Fe=0.0)
+            self.no_trafo = True # Flag that tells that no trafo should be considered 
         else: 
             self.trafo_data = trafo_data
+            self.no_trafo = False 
         self.m = np.arctan(self.gen_data.delta_max) 
         self.X_tot = self.trafo_data.X_T + self.gen_data.X_d_u
 
-    def _calc_stator_limit(self, P, V) -> Tuple[float, float]:
-        Q_max = np.sqrt((V*self.gen_data.I_g_max/self.trafo_data.tap_ratio)**2 - P**2)
-        return (-Q_max, Q_max)        
+    def _calc_stator_limit(self, P, V) -> Tuple[float, float, bool]:
+        Q_max = np.zeros_like(P, dtype=float)
+        valid_stator = P**2 <= (V*self.gen_data.I_g_max/self.trafo_data.tap_ratio)**2
+        Q_max[valid_stator] = np.sqrt((V[valid_stator]*self.gen_data.I_g_max/self.trafo_data.tap_ratio)**2 - P[valid_stator]**2)
+        return (-Q_max, Q_max, valid_stator)   
     
     def _calc_rotor_limit(self, P, V) -> Tuple[float, float]: 
-        r_f = self.gen_data.E_q_max*V/(self.trafo_data.tap_ratio*self.X_tot)
+        r_f_max = self.gen_data.E_q_max*V/(self.trafo_data.tap_ratio*self.X_tot)
+        r_f_min = self.gen_data.E_q_min*V/(self.trafo_data.tap_ratio*self.X_tot)
         q_f = -V**2/(self.trafo_data.tap_ratio**2 * self.X_tot)
-        Q_g_max = np.sqrt(r_f**2 - P**2) + q_f 
-        Q_g_min = -np.sqrt(r_f**2 - P**2) + q_f 
-        return (Q_g_min, Q_g_max) 
+        below_min = P < r_f_min
+        valid = P <= r_f_max
+        valid_and_below_min = np.logical_and(below_min, valid)
+        Q_g_max = np.zeros_like(P, dtype=float)
+        Q_g_min = np.array([np.nan for _ in Q_g_max], dtype=float)
+
+        Q_g_max[valid] = np.sqrt(r_f_max[valid]**2 - P[valid]**2) + q_f[valid] 
+        Q_g_min[valid_and_below_min] = np.sqrt(r_f_min[valid_and_below_min]**2 - P[valid_and_below_min]**2) + q_f[valid_and_below_min]
+        return (Q_g_min, Q_g_max, valid) 
     
     def _calc_stab_limit(self, P, V) -> Tuple[float, float]: 
         c = -V**2/(self.trafo_data.tap_ratio**2*self.X_tot)
         Q_min = self.m * P + c
-        return (Q_min, None)
+        return (Q_min, np.nan)
     
     def _calc_voltage_limit(self, P, V):
         if self.trafo_data.X_T <= 0: 
-            return (None, None)
-        k1 = V/(self.trafo_data.tap_ratio*self.trafo_data.X_T)
-        Q_max = k1*(self.gen_data.V_g_max - V/self.trafo_data.tap_ratio)
-        Q_min = k1*(self.gen_data.V_g_min - V/self.trafo_data.tap_ratio)
+            return (np.nan, np.nan)
+        # k1 = V/(self.trafo_data.tap_ratio*self.trafo_data.X_T)
+        # Q_max = k1*(self.gen_data.V_g_max - V/self.trafo_data.tap_ratio)
+        # Q_min = k1*(self.gen_data.V_g_min - V/self.trafo_data.tap_ratio)
+        ### k1 = V/self.trafo_data.tap_pos/self.trafo_data.X_T 
+        ### Q_lim = np.sqrt((V_lim*a)**2 - P**2) - a*V/self.trafo_data.tap_ratio
+        k1 = V/self.trafo_data.tap_ratio/self.trafo_data.X_T 
+        Q_min = np.sqrt((self.gen_data.V_g_min*k1)**2 - P**2) - k1*V/self.trafo_data.tap_ratio
+        Q_max = np.sqrt((self.gen_data.V_g_max*k1)**2 - P**2) - k1*V/self.trafo_data.tap_ratio
         return (Q_min, Q_max)
     
-    def calc_Q_lims(self, P_g, V_g) -> Tuple[float, float]: 
-        """ Returns (Q_min, Q_max, valid). 
-        The valid flag is a boolean signal indicating if the 
-        simulation is valid or not. An invalid simulation may be 
-        when the active power limit is exceeded. """
-        is_valid = self.gen_data.P_g_min_pu <= P_g <= self.gen_data.P_g_max_pu
-        Q_min_1, Q_max_1 = self._calc_stator_limit(P_g, V_g)
-        _, Q_max_2 = self._calc_rotor_limit(P_g, V_g)
-        Q_min_3, _ = self._calc_stab_limit(P_g, V_g)
-        Q_min = max((Q_min_1, Q_min_3))
-        Q_max = min((Q_max_1, Q_max_2))
-        return (Q_min, Q_max, is_valid)
+    def calc_Q_lims(self, P_g, V_g) -> CapabilityResult: 
+        """ Returns res: CapabilityResult """
+        valid_power = np.logical_and(self.gen_data.P_g_min_pu <= P_g, 
+                                     P_g <= self.gen_data.P_g_max_pu) 
+        Q_min_1, Q_max_1, valid_stator = self._calc_stator_limit(P_g, V_g)
+        Q_min_2, Q_max_2, valid_rotor = self._calc_rotor_limit(P_g, V_g)
+        Q_min_3, Q_min_4 = self._calc_stab_limit(P_g, V_g)
+
+        if self.no_trafo:
+            Q_min_4 = np.array([np.nan for _ in range(len(valid_power))]) 
+            Q_max_4 = np.array([np.nan for _ in range(len(valid_power))]) 
+            valid_voltage = np.logical_and(self.gen_data.V_g_min <= V_g, 
+                                           self.gen_data.V_g_max >= V_g)
+        else: 
+            Q_min_4, Q_max_4 = self._calc_voltage_limit(P_g, V_g)
+            valid_voltage = np.logical_and(Q_min_4 <= Q_max, Q_max_4 >= Q_min)
+
+        limit_min = np.nanargmax([Q_min_1, Q_min_2, Q_min_3, Q_min_4], axis=0)
+        limit_max = np.nanargmin([Q_max_1, Q_max_2, Q_max_3, Q_max_4], axis=0)
+        Q_min = np.nanmax([Q_min_1, Q_min_2, Q_min_3, Q_min_4], axis=0)
+        Q_max = np.nanmin([Q_max_1, Q_max_2, Q_max_3, Q_max_4], axis=0)
+            
+        res = CapabilityResult(P_g, Q_min, Q_max, Q_min_1, Q_max_1, Q_min_2, Q_max_2, Q_min_3, Q_min_4, Q_max_4, 
+                               valid_stator, valid_rotor, valid_power, valid_voltage, 
+                               limit_min, limit_max)
+        return res
     
 
 if __name__ == "__main__": 

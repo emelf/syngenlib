@@ -1,6 +1,8 @@
 from dataclasses import dataclass
-from typing import Tuple, Optional
+from typing import Tuple, Optional, Sequence
 from math import sqrt
+import numpy as np
+from enum import Enum
 
 @dataclass
 class GenDataClass: 
@@ -33,6 +35,7 @@ class GenDataClass:
     P_loss_nom_const_pu: float 
     X_q_u: Optional[float] = None
     E_q_max: Optional[float] = None 
+    E_q_min: Optional[float] = 0.1
     V_g_min: Optional[float] = 0.95 
     V_g_max: Optional[float] = 1.05
     I_g_max: Optional[float] = 1.05
@@ -77,7 +80,7 @@ class TrafoDataClass:
         self.Y_M = self.G_Fe - 1j*self.B_mu
 
 @dataclass
-class PowerLossResult: 
+class GeneratorLossResult: 
     P_g_pu: float 
     Q_g_pu: float 
     I_f_pu: float 
@@ -106,3 +109,68 @@ class PowerLossResult:
         """Returns (P_g_mw, Q_g_mvar, V_g_pu, I_f_pu, P_loss_mw)"""
         return (self.P_g_pu*S_base, self.Q_g_pu*S_base, self.V_g_pu, self.I_f_pu, self.get_losses_mw(S_base))
     
+
+@dataclass
+class TrafoLossResult: # TODO
+    P_g_pu: float 
+    Q_g_pu: float 
+    I_f_pu: float 
+    V_g_pu: float 
+    P_loss_stator_pu: float
+    P_loss_rotor_pu: float
+    P_loss_core_pu: float
+    P_loss_const_pu: float
+
+    def __post_init__(self): 
+        self.P_loss_tot = self.P_loss_stator_pu + self.P_loss_rotor_pu + self.P_loss_core_pu + self.P_loss_const_pu
+        self.eff = self.P_g_pu / (self.P_g_pu + self.P_loss_tot) 
+
+    def get_losses_pu(self) -> float: 
+        return self.P_loss_tot
+
+    def get_losses_mw(self, S_base) -> float: 
+        """Returns power losses in MW"""
+        return S_base*self.P_loss_tot
+    
+    def get_data_pu(self) -> Tuple[float, float, float, float, float]: 
+        """Returns (P_g_pu, Q_g_pu, V_g_pu, I_f_pu, P_loss_pu)"""
+        return (self.P_g_pu, self.Q_g_pu, self.V_g_pu, self.I_f_pu, self.P_loss_tot)
+    
+    def get_data_mw(self, S_base) -> Tuple[float, float, float, float, float]: 
+        """Returns (P_g_mw, Q_g_mvar, V_g_pu, I_f_pu, P_loss_mw)"""
+        return (self.P_g_pu*S_base, self.Q_g_pu*S_base, self.V_g_pu, self.I_f_pu, self.get_losses_mw(S_base))
+
+class CapabilityLimit(Enum): 
+    SCL = 1 # Stator limiter
+    OEL = 2 # Rotor limiter 
+    UEL = 3 # Rotor angle limiter
+    VLI = 4 # Voltage limiter
+
+
+@dataclass
+class CapabilityResult: 
+    P_vals: Sequence[float]
+    Q_min_tot: Sequence[float]
+    Q_max_tot: Sequence[float]
+    Q_stator_min: Sequence[float]
+    Q_stator_max: Sequence[float]
+    Q_rotor_min: Sequence[float]
+    Q_rotor_max: Sequence[float]
+    Q_stab_min: Sequence [float]
+    Q_v_min: Sequence[float]
+    Q_v_max: Sequence[float]
+    valid_stator_current: Sequence[bool]
+    valid_rotor_current: Sequence[bool]
+    valid_active_power: Sequence[bool]
+    valid_voltage_levels: Sequence[bool]
+    limiter_Q_min: Sequence[CapabilityLimit]
+    limiter_Q_max: Sequence[CapabilityLimit]
+    
+    def get_PQ_plot(self): 
+        """Returns (P_plot, Q_plot, valid_stator_current, valid_active_power, valid_voltage_levels)"""
+        Q_cap_plot = np.concatenate([self.Q_min_tot, self.Q_max_tot[::-1]])
+        P_cap_plot = np.concatenate([self.P_vals, self.P_vals[::-1]])
+        valid_stator_current_plot = np.concatenate([self.valid_stator_current, self.valid_stator_current[::-1]])
+        valid_active_power_plot = np.concatenate([self.valid_active_power, self.valid_active_power[::-1]])
+        valid_voltage_levels_plot = np.concatenate([self.valid_voltage_levels, self.valid_voltage_levels[::-1]])
+        return P_cap_plot, Q_cap_plot, valid_stator_current_plot, valid_active_power_plot, valid_voltage_levels_plot
