@@ -149,6 +149,12 @@ class CapabilityLimit(Enum):
 
 @dataclass
 class CapabilityResult: 
+    """ limiter_Q_lim: {
+    0 => stator limit, 
+    1 => rotor limit, 
+    2 => stability limit, 
+    3 => voltage limit
+    }"""
     P_vals: Sequence[float]
     Q_min_tot: Sequence[float]
     Q_max_tot: Sequence[float]

@@ -44,20 +44,24 @@ class CapabilityDiagram:
     def _calc_stab_limit(self, P, V) -> Tuple[float, float]: 
         c = -V**2/(self.trafo_data.tap_ratio**2*self.X_tot)
         Q_min = self.m * P + c
-        return (Q_min, np.nan)
+        Q_max = np.array([np.nan for _ in Q_min], dtype=float)
+        return (Q_min, Q_max)
     
     def _calc_voltage_limit(self, P, V):
+        Q_min = np.zeros_like(P, dtype=float)
+        Q_max = np.zeros_like(P, dtype=float)
         if self.trafo_data.X_T <= 0: 
-            return (np.nan, np.nan)
-        # k1 = V/(self.trafo_data.tap_ratio*self.trafo_data.X_T)
-        # Q_max = k1*(self.gen_data.V_g_max - V/self.trafo_data.tap_ratio)
-        # Q_min = k1*(self.gen_data.V_g_min - V/self.trafo_data.tap_ratio)
-        ### k1 = V/self.trafo_data.tap_pos/self.trafo_data.X_T 
-        ### Q_lim = np.sqrt((V_lim*a)**2 - P**2) - a*V/self.trafo_data.tap_ratio
+            Q_min[:] = np.nan 
+            Q_max[:] = np.nan
         k1 = V/self.trafo_data.tap_ratio/self.trafo_data.X_T 
-        Q_min = np.sqrt((self.gen_data.V_g_min*k1)**2 - P**2) - k1*V/self.trafo_data.tap_ratio
-        Q_max = np.sqrt((self.gen_data.V_g_max*k1)**2 - P**2) - k1*V/self.trafo_data.tap_ratio
-        return (Q_min, Q_max)
+        k2_min = (self.gen_data.V_g_min*k1)
+        k2_max = (self.gen_data.V_g_max*k1)
+        valid = k2_min >= P 
+        Q_min[valid] = np.sqrt(k2_min**2 - P**2) - k1*V/self.trafo_data.tap_ratio
+        Q_max[valid] = np.sqrt(k2_max**2 - P**2) - k1*V/self.trafo_data.tap_ratio
+        Q_min[~valid] = np.nan
+        Q_max[~valid] = np.nan
+        return (Q_min, Q_max, valid)
     
     def calc_Q_lims(self, P_g, V_g) -> CapabilityResult: 
         """ Returns res: CapabilityResult """
@@ -65,7 +69,7 @@ class CapabilityDiagram:
                                      P_g <= self.gen_data.P_g_max_pu) 
         Q_min_1, Q_max_1, valid_stator = self._calc_stator_limit(P_g, V_g)
         Q_min_2, Q_max_2, valid_rotor = self._calc_rotor_limit(P_g, V_g)
-        Q_min_3, Q_min_4 = self._calc_stab_limit(P_g, V_g)
+        Q_min_3, Q_max_3 = self._calc_stab_limit(P_g, V_g)
 
         if self.no_trafo:
             Q_min_4 = np.array([np.nan for _ in range(len(valid_power))]) 
@@ -73,18 +77,55 @@ class CapabilityDiagram:
             valid_voltage = np.logical_and(self.gen_data.V_g_min <= V_g, 
                                            self.gen_data.V_g_max >= V_g)
         else: 
-            Q_min_4, Q_max_4 = self._calc_voltage_limit(P_g, V_g)
-            valid_voltage = np.logical_and(Q_min_4 <= Q_max, Q_max_4 >= Q_min)
+            Q_min_4, Q_max_4, valid_voltage = self._calc_voltage_limit(P_g, V_g)
 
         limit_min = np.nanargmax([Q_min_1, Q_min_2, Q_min_3, Q_min_4], axis=0)
         limit_max = np.nanargmin([Q_max_1, Q_max_2, Q_max_3, Q_max_4], axis=0)
         Q_min = np.nanmax([Q_min_1, Q_min_2, Q_min_3, Q_min_4], axis=0)
         Q_max = np.nanmin([Q_max_1, Q_max_2, Q_max_3, Q_max_4], axis=0)
-            
+        valid_voltage = np.logical_and.reduce((Q_min_4 <= Q_max, Q_max_4 >= Q_min, valid_voltage))
+
         res = CapabilityResult(P_g, Q_min, Q_max, Q_min_1, Q_max_1, Q_min_2, Q_max_2, Q_min_3, Q_min_4, Q_max_4, 
                                valid_stator, valid_rotor, valid_power, valid_voltage, 
                                limit_min, limit_max)
         return res
+    
+    def calc_Q_lims_mesh(self, p_mesh, v_mesh) -> CapabilityResult: 
+        Q_min = np.zeros_like(p_mesh, dtype=float) 
+        Q_max = np.zeros_like(p_mesh, dtype=float) 
+        Q_min_1 = np.zeros_like(p_mesh, dtype=float) 
+        Q_max_1 = np.zeros_like(p_mesh, dtype=float) 
+        Q_min_2 = np.zeros_like(p_mesh, dtype=float) 
+        Q_max_2 = np.zeros_like(p_mesh, dtype=float) 
+        Q_min_3 = np.zeros_like(p_mesh, dtype=float) 
+        Q_min_4 = np.zeros_like(p_mesh, dtype=float) 
+        Q_max_4 = np.zeros_like(p_mesh, dtype=float) 
+        valid_stator = np.zeros_like(p_mesh, dtype=bool) 
+        valid_rotor = np.zeros_like(p_mesh, dtype=bool) 
+        valid_power = np.zeros_like(p_mesh, dtype=bool) 
+        valid_voltage = np.zeros_like(p_mesh, dtype=bool) 
+        limit_min = np.zeros_like(p_mesh, dtype=int) 
+        limit_max = np.zeros_like(p_mesh, dtype=int)
+        for i, (p, v) in enumerate(zip(p_mesh, v_mesh)): 
+            res = self.calc_Q_lims(p, v)
+            Q_min[i] = res.Q_min_tot
+            Q_max[i] = res.Q_max_tot
+            Q_min_1[i] = res.Q_stator_min
+            Q_max_1[i] = res.Q_stator_max
+            Q_min_2[i] = res.Q_rotor_min
+            Q_max_2[i] = res.Q_rotor_max
+            Q_min_3[i] = res.Q_stab_min
+            Q_min_4[i] = res.Q_v_min
+            Q_max_4[i] = res.Q_v_max
+            valid_stator[i] = res.valid_stator_current
+            valid_rotor[i] = res.valid_rotor_current
+            valid_power[i] = res.valid_active_power
+            valid_voltage[i] = res.valid_voltage_levels
+            limit_min[i] = res.limiter_Q_min
+            limit_max[i] = res.limiter_Q_max
+        return CapabilityResult(p_mesh, Q_min, Q_max, Q_min_1, Q_max_1, Q_min_2, Q_max_2, Q_min_3, Q_min_4, Q_max_4, 
+                                valid_stator, valid_rotor, valid_power, valid_voltage, 
+                                limit_min, limit_max) 
     
 
 if __name__ == "__main__": 
