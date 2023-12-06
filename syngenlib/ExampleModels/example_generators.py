@@ -31,7 +31,7 @@ gen_120_mva = GeneratorDataClass(S_n_mva=120, V_nom_kV=14.7, cos_phi_nom=0.86,
 test_generator = GeneratorDataClass(S_n_mva=100, V_nom_kV=10, cos_phi_nom=0.9, 
                                     X_d_u=1.0, X_q_u=0.5, delta_max=30*np.pi/180, 
                                     P_g_min_pu=0.1, P_g_max_pu=1.0, V_g_min=0.95, V_g_max=1.05,
-                                    P_loss_nom_stator_pu=0.1, 
-                                    P_loss_nom_rotor_pu=0.2, 
-                                    P_loss_nom_core_pu=0.3, 
-                                    P_loss_nom_const_pu=0.4) 
+                                    P_loss_nom_stator_pu=0.01, 
+                                    P_loss_nom_rotor_pu=0.01, 
+                                    P_loss_nom_core_pu=0.01, 
+                                    P_loss_nom_const_pu=0.02) 
