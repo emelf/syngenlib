@@ -1,10 +1,10 @@
 from typing import Tuple
 import numpy as np
 
-from .DataClasses import GenDataClass, GeneratorLossResult, TrafoDataClass
+from ..common import GeneratorDataClass, GeneratorLossResult
 
 class GeneratorLossModel: 
-    def __init__(self, model_data: GenDataClass): 
+    def __init__(self, model_data: GeneratorDataClass): 
         self.md = model_data
 
         P_nom = self.md.cos_phi_nom 
@@ -15,7 +15,7 @@ class GeneratorLossModel:
         E_q_square = V_g**2*((1.0 + self.md.X_d_u*Q_g/(V_g**2))**2 + (self.md.X_d_u*P_g/(V_g**2))**2)
         return np.sqrt(E_q_square)
     
-    def _calc_currents(self, P_pu: float, Q_pu: float, V_g: float) -> float: 
+    def _calc_currents(self, P_pu: float, Q_pu: float, V_g: float) -> Tuple[float, float]: 
         """Calculates the stator and rotor currents (and load angle) based on given inputs. \n
         returns (I_a, I_f)"""
         I_a = np.sqrt(P_pu**2 + Q_pu**2)/V_g
@@ -57,14 +57,3 @@ class GeneratorLossModel:
         dP_L_dV_g = dP_s_dV_g + dP_r_dV_g + dP_c_dV_g
 
         return (dP_L_dP_g, dP_L_dQ_g, dP_L_dV_g) 
-
-
-class TransformerLossModel: # TODO
-    def __init__(self, trafo_data: TrafoDataClass): 
-        self.md = trafo_data 
-
-    def get_P_losses(self, P_in_mw, Q_in_mw, V_in, V_out): 
-        """Note: The convention is that V_in is the generator side. P and Q are 
-        positive in the directin into the "in"-side. """
-        pass 
-        

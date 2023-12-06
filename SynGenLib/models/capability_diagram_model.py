@@ -1,6 +1,6 @@
 import numpy as np 
 from typing import Tuple, Optional
-from .DataClasses import GenDataClass, TrafoDataClass, CapabilityResult, CapabilityLimit
+from ..common import GeneratorDataClass, TransformerDataClass, CapabilityResult
 
 class CapabilityDiagram: 
     """This is the generator+trafo capability diagram constructor. 
@@ -8,12 +8,12 @@ class CapabilityDiagram:
     model is supplied. When defining the terminal voltage, this could be either 
     the generator voltage, or the upstream trafo voltage, depending on if the 
     trafo model has been given or not. """
-    def __init__(self, gen_data: GenDataClass, trafo_data: Optional[TrafoDataClass]=None): 
+    def __init__(self, gen_data: GeneratorDataClass, trafo_data: Optional[TransformerDataClass]=None): 
         self.gen_data = gen_data    
         if trafo_data is None: 
-            self.trafo_data = TrafoDataClass(S_n_mva=self.gen_data.S_n_mva, 
-                                             V_nom_kV=self.gen_data.V_nom_kV, 
-                                             V_SCH=0.0, I_E=0.0, P_Cu=0.0, P_Fe=0.0)
+            self.trafo_data = TransformerDataClass(S_n_mva=self.gen_data.S_n_mva, 
+                                                   V_nom_kV=self.gen_data.V_nom_kV, 
+                                                   V_SCH=0.0, I_E=0.0, P_Cu=0.0, P_Fe=0.0)
             self.no_trafo = True # Flag that tells that no trafo should be considered 
         else: 
             self.trafo_data = trafo_data
@@ -25,6 +25,7 @@ class CapabilityDiagram:
         Q_max = np.zeros_like(P, dtype=float)
         valid_stator = P**2 <= (V*self.gen_data.I_g_max/self.trafo_data.tap_ratio)**2
         Q_max[valid_stator] = np.sqrt((V[valid_stator]*self.gen_data.I_g_max/self.trafo_data.tap_ratio)**2 - P[valid_stator]**2)
+        Q_max[~valid_stator] = np.nan
         return (-Q_max, Q_max, valid_stator)   
     
     def _calc_rotor_limit(self, P, V) -> Tuple[float, float]: 
@@ -130,7 +131,7 @@ class CapabilityDiagram:
 
 if __name__ == "__main__": 
     import matplotlib.pyplot as plt 
-    from ExampleGens import gen_103_mva
+    from ExampleModels import gen_103_mva
     
     CD1 = CapabilityDiagram(gen_103_mva)
 
