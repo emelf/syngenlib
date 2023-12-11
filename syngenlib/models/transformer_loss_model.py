@@ -25,7 +25,7 @@ class TransformerLossModel:
         V_g, I_g = self._calc_gen_V_I(V_r, I_grid) 
         # P_loss = self._calc_P_losses(V_r, I_grid, V_g, I_g)
         S_gen = V_g * I_g.conj() 
-        return TransformerLossResult(S_gen.real, P_r_pu, S_gen.imag, Q_r_pu)
+        return TransformerLossResult(S_gen.real, P_r_pu, S_gen.imag, Q_r_pu, V_g, V_r)
 
         
 

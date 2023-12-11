@@ -185,10 +185,13 @@ class GeneratorLossResult:
 
 @dataclass
 class TransformerLossResult:
-    P_in: float
-    P_out: float 
-    Q_in: float 
-    Q_out: float 
+    P_in: Sequence[float]
+    P_out: Sequence[float] 
+    Q_in: Sequence[float] 
+    Q_out: Sequence[float] 
+    V_in: Sequence[float]
+    V_out: Sequence[float] 
+
 
     def __post_init__(self): 
         self.P_loss = np.abs(self.P_in - self.P_out)
@@ -264,6 +267,7 @@ class PlantOperationalData:
 class PlantLossResult: 
     gen_data_results: Sequence[GeneratorLossResult]
     trafo_data_results: Sequence[TransformerLossResult]
+    cap_diag_results: Sequence[CapabilityResult]
 
     def __post_init__(self): 
         self.len = len(self.gen_data_results[0].P_g_pu)
