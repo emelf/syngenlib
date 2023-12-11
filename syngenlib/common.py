@@ -184,34 +184,22 @@ class GeneratorLossResult:
     
 
 @dataclass
-class TrafoLossResult: # TODO
-    P_g_pu: float 
-    Q_g_pu: float 
-    I_f_pu: float 
-    V_g_pu: float 
-    P_loss_stator_pu: float
-    P_loss_rotor_pu: float
-    P_loss_core_pu: float
-    P_loss_const_pu: float
+class TransformerLossResult:
+    P_in: float
+    P_out: float 
+    Q_in: float 
+    Q_out: float 
 
     def __post_init__(self): 
-        self.P_loss_tot = self.P_loss_stator_pu + self.P_loss_rotor_pu + self.P_loss_core_pu + self.P_loss_const_pu
-        self.eff = self.P_g_pu / (self.P_g_pu + self.P_loss_tot) 
+        self.P_loss = np.abs(self.P_in - self.P_out)
+        self.eff = self.P_out / self.P_in
 
     def get_losses_pu(self) -> float: 
-        return self.P_loss_tot
+        return self.P_loss
 
     def get_losses_mw(self, S_base) -> float: 
         """Returns power losses in MW"""
-        return S_base*self.P_loss_tot
-    
-    def get_data_pu(self) -> Tuple[float, float, float, float, float]: 
-        """Returns (P_g_pu, Q_g_pu, V_g_pu, I_f_pu, P_loss_pu)"""
-        return (self.P_g_pu, self.Q_g_pu, self.V_g_pu, self.I_f_pu, self.P_loss_tot)
-    
-    def get_data_mw(self, S_base) -> Tuple[float, float, float, float, float]: 
-        """Returns (P_g_mw, Q_g_mvar, V_g_pu, I_f_pu, P_loss_mw)"""
-        return (self.P_g_pu*S_base, self.Q_g_pu*S_base, self.V_g_pu, self.I_f_pu, self.get_losses_mw(S_base))
+        return S_base*self.P_loss
 
 
 @dataclass
@@ -247,3 +235,43 @@ class CapabilityResult:
         valid_active_power_plot = np.concatenate([self.valid_active_power, self.valid_active_power[::-1]])
         valid_voltage_levels_plot = np.concatenate([self.valid_voltage_levels, self.valid_voltage_levels[::-1]])
         return P_cap_plot, Q_cap_plot, valid_stator_current_plot, valid_active_power_plot, valid_voltage_levels_plot
+
+@dataclass
+class PlantOperationalData: 
+    """Usage: 
+    1) Create an instance of this class given N_g and V_hv_data 
+    2) Give the P data sequences for all generators [All  in MW] 
+    3) Give the Q data sequences for all generators [All in Mvar]"""
+    N_g: int 
+    V_hv_data: Sequence[float]
+
+    def __post_init__(self): 
+        self.P_g_hv_data = np.zeros((self.N_g, len(self.V_hv_data)))
+        self.Q_g_hv_data = np.zeros((self.N_g, len(self.V_hv_data)))
+
+    def give_P_data(self, *P_g_sequences):
+        """Give all sequences of P_g (on the HV side) here for all generators"""
+        for i, P_g in enumerate(P_g_sequences): 
+            self.P_g_hv_data[i] = P_g 
+
+    def give_Q_data(self, *Q_g_sequences): 
+        """Give all sequences of Q_g (on the HV side) here for all generators"""
+        for i, Q_g in enumerate(Q_g_sequences): 
+            self.Q_g_hv_data[i] = Q_g 
+
+
+@dataclass
+class PlantLossResult: 
+    gen_data_results: Sequence[GeneratorLossResult]
+    trafo_data_results: Sequence[TransformerLossResult]
+
+    def __post_init__(self): 
+        self.len = len(self.gen_data_results[0].P_g_pu)
+
+    def get_P_loss_tot_mw(self, S_bases: Sequence[float]) -> Sequence[float]: 
+        """S_bases: [S_base_1, S_base_2, ..., S_base_N]"""
+        P_loss = np.zeros(self.len, dtype=float)
+        for gen_loss, trafo_loss, S_base in zip(self.gen_data_results, self.trafo_data_results, S_bases):
+            P_loss += gen_loss.get_losses_mw(S_base) + trafo_loss.get_losses_mw(S_base)
+
+        return P_loss 

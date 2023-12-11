@@ -1,7 +1,7 @@
 from typing import Optional
 import numpy as np
 
-from ..common import TransformerDataClass
+from ..common import TransformerDataClass, TransformerLossResult
 
 class TransformerLossModel: 
     def __init__(self, trafo_data: TransformerDataClass): 
@@ -19,18 +19,14 @@ class TransformerLossModel:
         P_12_loss = abs(I_12)**2 * self.md.Z_12.real 
         return P_hv_loss + P_lv_loss + P_12_loss 
     
-    def get_P_losses_pu(self, P_r_pu, Q_r_pu, V_r): 
+    def get_P_losses(self, P_r_pu, Q_r_pu, V_r) -> TransformerLossResult: 
         """All input quantities are refered to at the grid-side (recieving side)"""
         I_grid = (P_r_pu - 1j*Q_r_pu)/V_r
         V_g, I_g = self._calc_gen_V_I(V_r, I_grid) 
-        P_loss = self._calc_P_losses(V_r, I_grid, V_g, I_g)
-        return P_loss
-    
-    def get_P_losses_mw(self, P_r_pu: float, Q_r_pu: float, V_r: float, S_base_mva: Optional[float]=None): 
-        if S_base_mva is None: 
-            S_base_mva = self.md.S_n_mva 
-        P_loss = self.get_P_losses_pu(P_r_pu, Q_r_pu, V_r) * S_base_mva 
-        return P_loss
+        # P_loss = self._calc_P_losses(V_r, I_grid, V_g, I_g)
+        S_gen = V_g * I_g.conj() 
+        return TransformerLossResult(S_gen.real, P_r_pu, S_gen.imag, Q_r_pu)
+
         
 
         
