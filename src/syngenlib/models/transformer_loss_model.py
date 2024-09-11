@@ -1,5 +1,3 @@
-import numpy as np
-
 from syngenlib.data import TransformerDataClass, TransformerLossResult
 
 class TransformerLossModel:
@@ -35,8 +33,8 @@ class TransformerLossModel:
                 V_g (complex): Generator-side voltage.
                 I_g (complex): Generator-side current.
         """
-        VI = np.array([V_r, I_r])
-        [V_g, I_g] = self.md.ABCD_mat @ VI
+        V_g = self.md.A * V_r + self.md.B * I_r 
+        I_g = self.md.C * V_r + self.md.D * I_r
         return V_g, I_g
 
     def _calc_P_losses(self, V_r: complex, I_r: complex, V_s: complex, I_s: complex) -> float:

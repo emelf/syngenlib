@@ -1,7 +1,6 @@
 from .dataclasses import GeneratorOperatingPoint, TransformerOperatingPoint
 from dataclasses import dataclass
 from typing import Sequence
-import numpy as np
 
 @dataclass
 class GeneratorLossResult:
@@ -20,10 +19,10 @@ class GeneratorLossResult:
     op: GeneratorOperatingPoint
     I_f_pu: float
     E_q_pu: float
-    P_loss_stator_pu: float
-    P_loss_rotor_pu: float
-    P_loss_core_pu: float
-    P_loss_const_pu: float
+    P_loss_stator_mw: float
+    P_loss_rotor_mw: float
+    P_loss_core_mw: float
+    P_loss_const_mw: float
 
     def __post_init__(self):
         """
@@ -31,18 +30,21 @@ class GeneratorLossResult:
 
         This method calculates the total power losses and efficiency based on the initialized values.
         """
-        self.P_loss_tot_pu = self.P_loss_stator_pu + self.P_loss_rotor_pu + self.P_loss_core_pu + self.P_loss_const_pu
-        P_pu, _, _ = self.op.get_PQV_pu()
-        self.eff = P_pu / (P_pu + self.P_loss_tot_pu)
+        self.P_loss_tot_mw = self.P_loss_stator_mw + self.P_loss_rotor_mw + self.P_loss_core_mw + self.P_loss_const_mw
+        P_mw, _, _ = self.op.get_PQV_electrical_units()
+        self.eff = P_mw / (P_mw + self.P_loss_tot_mw)
 
-    def get_losses_pu(self) -> float:
+    def get_total_losses_pu(self, S_base_mva: float) -> float:
         """
         Get the total power losses in per-unit.
+
+        Args:
+            S_base_mva (float): Base power [MVA]
 
         Returns:
             float: Total power losses [pu]
         """
-        return self.P_loss_tot_pu
+        return self.P_loss_tot_mw/S_base_mva
 
     def get_total_losses_mw(self) -> float:
         """
@@ -51,24 +53,24 @@ class GeneratorLossResult:
         Returns:
             float: Total power losses [MW]
         """
-        return self.op.S_n_mva * self.P_loss_tot_pu
+        return self.P_loss_tot_mw
 
-    def get_component_losses_pu(self) -> tuple[float, float, float, float, float]:
+    def get_component_losses_pu(self, S_base_mva: float) -> tuple[float, float, float, float, float]:
         """
         Get all generator losses in per-unit.
 
+        Args:
+            S_base_mva (float): Base power [MVA]
+
         Returns:
             tuple: A tuple containing five elements:
-                - P_loss_tot_pu (float): Total losses in per-unit.
-                - P_loss_stator_pu (float): Stator losses in per-unit.
-                - P_loss_rotor_pu (float): Rotor losses in per-unit.
-                - P_loss_core_pu (float): Core losses in per-unit.
-                - P_loss_const_pu (float): Constant losses in per-unit.
+                - P_loss_tot_mw (float): Total losses in per-unit.
+                - P_loss_stator_mw (float): Stator losses in per-unit.
+                - P_loss_rotor_mw (float): Rotor losses in per-unit.
+                - P_loss_core_mw (float): Core losses in per-unit.
+                - P_loss_const_mw (float): Constant losses in per-unit.
         """
-
-
-
-        return (self.P_loss_tot_pu, self.P_loss_stator_pu, self.P_loss_rotor_pu, self.P_loss_core_pu, self.P_loss_const_pu)
+        return tuple([loss / S_base_mva for loss in self.get_component_losses_mw()])
 
     def get_component_losses_mw(self) -> tuple[float, float, float, float, float]:
         """
@@ -82,9 +84,8 @@ class GeneratorLossResult:
                 - P_loss_core_mw (float): Core losses in MW.
                 - P_loss_const_mw (float): Constant losses in MW.
         """
-
-        return tuple([loss * self.op.S_n_mva for loss in self.get_component_losses_pu()])
-    
+        return (self.P_loss_tot_mw, self.P_loss_stator_mw, self.P_loss_rotor_mw, self.P_loss_core_mw, self.P_loss_const_mw)
+        
 
 @dataclass
 class TransformerLossResult:
@@ -102,7 +103,7 @@ class TransformerLossResult:
 
         This method calculates the total power losses and efficiency based on the input and output power sequences.
         """
-        self.P_loss_mw = np.abs(self.op.P_in_mw - self.op.P_out_mw)
+        self.P_loss_mw = abs(self.op.P_in_mw - self.op.P_out_mw)
         self.eff = min(self.op.P_out_mw, self.op.P_in_mw) / max(self.op.P_out_mw, self.op.P_in_mw)
 
     def get_losses_pu(self) -> Sequence[float]:

@@ -1,71 +1,48 @@
 # SynGenLib
 
-**SynGenLib** is an object-oriented Python library that establishes a framework for defining dataclasses of synchronous generators and their respective step-up transformers. Using these dataclasses, one can define objects that helps calculate the power losses of the synchronous machine, according to the method presented in [1]. Additionally, there are functionalities for defining generator capability diagrams according to the system of equations established in [2], with the purpose to calculate reactive power limits.
+**SynGenLib** is an object-oriented Python library that establishes a framework for defining dataclasses of synchronous generators and their respective step-up transformers. Using these dataclasses, one can define objects that help calculate the power losses of synchronous machines according to the method presented in [1]. Additionally, the library provides functionalities for defining generator capability diagrams based on the system of equations established in [2], with the purpose of calculating reactive power limits.
 
-## Directory organization
+## Directory Organization
 
-Explain how the code and folders/directories are structured. For example if it is object oriented, which is the main file and which are the supporting utilities.
+The SynGenLib code resides in the `src` folder and is divided into five parts:
+
+- **archive**: Contains old and deprecated code. This folder is not accessible when using the library but is retained for potential future reference.
+- **core**: Holds custom exceptions. Currently, this folder is empty.
+- **data**: Defines the dataclasses used for storing parameters and result data.
+- **models**: Contains calculation models for the generator, transformer, and capability diagram.
+- **utils**: Intended for common helper functions and other utility classes. This folder is currently empty.
+
+The `examples` folder contains sample generator and transformer dataclasses, along with scripts demonstrating how to get started with and use SynGenLib.
+
+The `tests` folder includes unit tests for various calculation classes. This is a work in progress.
 
 ## Getting Started
 
-These instructions will get you a copy of the project up and running on your local machine for development and testing purposes. See deployment for notes on how to deploy the project on a live system.
+To get started with SynGenLib, clone the repository to your local machine using `git` or by downloading the main branch from **GitHub**. Navigate to the repository folder and install the library using:
+
+```bash
+pip install .
+```
+
+These instructions will set up a local copy of the project for development and testing purposes. See the deployment section for notes on how to deploy the project in a live environment.
 
 ### Prerequisites
 
-What things you need to install the software and how to install them
-
-```
-Give examples
-```
-
-### Installing
-
-A step by step series of examples that tell you how to get a development env running
-
-Say what the step will be
-
-```
-Give the example
-```
-
-And repeat
-
-```
-until finished
-```
-
-End with an example of getting some data out of the system or using it for a little demo
-
-## Running the tests
-
-Explain how to run the automated tests for this system
-
-### Break down into end to end tests
-
-Explain what these tests test and why
-
-```
-Give an example
-```
-
-
+SynGenLib doesn't depend on any external Python libraries; only the standard **math** and **dataclasses** modules are used in the `src` folder. If you run examples, you may need **matplotlib** and **numpy**.
 
 ## Authors
 
+- **Emil G. Melfald**, University of South-Eastern Norway
 
 ## License
 
-This project is licensed under the MIT License.
+This project is licensed under the MIT License. See the [LICENSE](./LICENSE) file for details.
 
 ## Acknowledgments
 
-* Hat tip to anyone whose code was used
-* Inspiration
-* etc
+This library is inspired by the work presented in references [1] and [2].
 
-# Citation 
+## Citation
 
-Refer to an article where the model was introduced for the readers or users to cite if they use the model.
-
-[1] E. d. C. Bortoni, R. T. Siniscalchi, S. Vaschetto, M. A. Darmani, and A. Cavagnino, “Efficiency mapping and weighted average efficiency for large hydrogenerators,” IEEE Open J. Ind. Appl., vol. 2, pp. 11–20, 2021.
-[2] J. Machowski, Z. Lubosny, J. W. Bialek, and J. R. Bumby, Power System Dynamics: Stability and control, Third Edition. Wiley, 2020.
+- [1] E. d. C. Bortoni, R. T. Siniscalchi, S. Vaschetto, M. A. Darmani, and A. Cavagnino, “Efficiency mapping and weighted average efficiency for large hydrogenerators,” IEEE Open J. Ind. Appl., vol. 2, pp. 11–20, 2021.
+- [2] J. Machowski, Z. Lubosny, J. W. Bialek, and J. R. Bumby, *Power System Dynamics: Stability and Control*, Third Edition. Wiley, 2020.

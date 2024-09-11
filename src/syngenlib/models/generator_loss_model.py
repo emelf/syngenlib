@@ -1,6 +1,6 @@
-import numpy as np
-
 from syngenlib.data import GeneratorDataClass, GeneratorOperatingPoint, GeneratorLossResult
+from math import tan, acos, sqrt
+
 
 class GeneratorLossModel:
     """
@@ -17,8 +17,8 @@ class GeneratorLossModel:
     def __init__(self, model_data: GeneratorDataClass):
         self.md = model_data
         P_nom = self.md.cos_phi_nom 
-        Q_nom = P_nom * np.tan(np.arccos(P_nom))
-        op_nom = GeneratorOperatingPoint(P_nom, Q_nom, 1.0)
+        Q_nom = P_nom * tan(acos(P_nom))
+        op_nom = GeneratorOperatingPoint(P_nom*model_data.S_n_mva, Q_nom*model_data.S_n_mva, 1.0)
         _, _, self.E_q_nom = self.calculate_generator_quantities(op_nom)
     
     def calculate_generator_quantities(self, op: GeneratorOperatingPoint) -> tuple[float, float]:
@@ -34,10 +34,10 @@ class GeneratorLossModel:
                 I_f (float): Rotor current.
                 E_q (float): Internal voltage of the generator.
         """
-        P, Q, V = op.get_PQV_pu()
-        I_a = np.sqrt(P**2 + Q**2) / V
+        P, Q, V = op.get_PQV_pu(self.md.S_n_mva)
+        I_a = sqrt(P**2 + Q**2) / V
         E_q_square = V**2 * ((1.0 + self.md.X_d_u * Q / (V**2))**2 + (self.md.X_d_u * P / (V**2))**2)
-        E_q = np.sqrt(E_q_square)
+        E_q = sqrt(E_q_square)
         I_f = E_q * self.md.k_If
         return (I_a, I_f, E_q) 
 
@@ -53,12 +53,13 @@ class GeneratorLossModel:
         Returns:
             GeneratorLossResult: A dataclass containing the calculated power losses.
         """
-        P, Q, V = op.get_PQV_pu()
+        P, Q, V = op.get_PQV_pu(self.md.S_n_mva)
         I_a, I_f, E_q = self.calculate_generator_quantities(op)
-        P_loss_stator = self.md.P_loss_nom_stator_pu * I_a**2
-        P_loss_rotor = self.md.P_loss_nom_rotor_pu * I_f**2
-        P_loss_core = self.md.P_loss_nom_core_pu * V**2
-        return GeneratorLossResult(op, I_f, E_q, P_loss_stator, P_loss_rotor, P_loss_core, self.md.P_loss_nom_const_pu)
+        P_loss_stator = self.md.P_loss_nom_stator_pu * I_a**2 * self.md.S_n_mva
+        P_loss_rotor = self.md.P_loss_nom_rotor_pu * I_f**2 * self.md.S_n_mva
+        P_loss_core = self.md.P_loss_nom_core_pu * V**2 * self.md.S_n_mva
+        P_loss_const = self.md.P_loss_nom_const_pu*self.md.S_n_mva
+        return GeneratorLossResult(op, I_f, E_q, P_loss_stator, P_loss_rotor, P_loss_core, P_loss_const)
     
     def get_P_loss_grad_pu(self, op: GeneratorOperatingPoint) -> tuple[float, float, float]:
         """
@@ -73,7 +74,7 @@ class GeneratorLossModel:
                 dP_L_dQ_g (float): Partial derivative of power loss with respect to Q_g.
                 dP_L_dV_g (float): Partial derivative of power loss with respect to V_g.
         """
-        P_g_pu, Q_g_pu, V_g = op.get_PQV_pu()
+        P_g_pu, Q_g_pu, V_g = op.get_PQV_pu(self.md.S_n_mva)
         # Stator loss gradients
         dP_s_dP_g = 2 * self.md.P_loss_nom_stator_pu * P_g_pu / V_g**2  
         dP_s_dQ_g = 2 * self.md.P_loss_nom_stator_pu * Q_g_pu / V_g**2 

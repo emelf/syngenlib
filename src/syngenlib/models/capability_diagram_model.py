@@ -1,8 +1,7 @@
-import numpy as np 
-import numpy.typing as npt
 from typing import Optional, Sequence
 from syngenlib.data import GeneratorDataClass, TransformerDataClass, CapabilityResult
 from syngenlib.data import GeneratorOperatingPoint
+from math import atan, sqrt, nan, inf
 
 class CapabilityDiagram:
     """
@@ -56,7 +55,7 @@ class CapabilityDiagram:
             self.trafo_data = trafo_data
             self.no_trafo = False
         
-        self._m = np.arctan(self.gen_data.delta_max)
+        self._m = atan(self.gen_data.delta_max)
         self.x_tot_pu = self.trafo_data.X_T + self.gen_data.X_d_u
 
 
@@ -69,14 +68,14 @@ class CapabilityDiagram:
                 Q_max_pu (float): Maximum reactive power limit. [pu]
                 valid_stator (bool): Flag indicating the stator current limits are feasible. 
             """
-        P, Q, V = op.get_PQV_pu()
+        P, Q, V = op.get_PQV_pu(self.gen_data.S_n_mva)
         valid_stator = P**2 <= (V*self.gen_data.I_g_max/self.trafo_data.tap_ratio)**2
         if valid_stator: 
-            Q_max = np.sqrt((V*self.gen_data.I_g_max/self.trafo_data.tap_ratio)**2 - P**2)
+            Q_max = sqrt((V*self.gen_data.I_g_max/self.trafo_data.tap_ratio)**2 - P**2)
             Q_min = -Q_max
         else: 
-            Q_min = np.nan
-            Q_max = np.nan
+            Q_min = nan
+            Q_max = nan
         return (Q_min, Q_max, valid_stator)
 
     def get_stator_limits_mvar(self, op: GeneratorOperatingPoint) -> tuple[float, float, bool]:
@@ -89,7 +88,7 @@ class CapabilityDiagram:
                 valid_stator (bool): Flag indicating the stator current limits are feasible. 
         """
         Q_min_pu, Q_max_pu, valid_stator = self.get_stator_limits_pu(op)
-        return (Q_min_pu*op.S_n_mva, Q_max_pu*op.S_n_mva, valid_stator)
+        return (Q_min_pu*self.gen_data.S_n_mva, Q_max_pu*self.gen_data.S_n_mva, valid_stator)
     
     def get_rotor_limits_pu(self, op: GeneratorOperatingPoint) -> tuple[float, float]: 
         """Calculates the minimum and maximum reactive power limits based on rotor current. 
@@ -100,7 +99,7 @@ class CapabilityDiagram:
                 Q_max_pu (float): Maximum reactive power limit. [pu]
                 valid (bool): Flag indicating the rotor current limits are feasible.
         """
-        P, Q, V = op.get_PQV_pu()
+        P, Q, V = op.get_PQV_pu(self.gen_data.S_n_mva)
         r_f_max = self.gen_data.E_q_max*V/(self.trafo_data.tap_ratio*self.x_tot_pu)
         r_f_min = self.gen_data.E_q_min*V/(self.trafo_data.tap_ratio*self.x_tot_pu)
         q_f = -V**2/(self.trafo_data.tap_ratio**2 * self.x_tot_pu)
@@ -109,14 +108,14 @@ class CapabilityDiagram:
         valid_and_below_min = below_min and valid
 
         if valid_and_below_min: 
-            Q_g_min = np.sqrt(r_f_min**2 - P**2) + q_f
-            Q_g_max = np.sqrt(r_f_max**2 - P**2) + q_f
+            Q_g_min = sqrt(r_f_min**2 - P**2) + q_f
+            Q_g_max = sqrt(r_f_max**2 - P**2) + q_f
         elif valid: 
-            Q_g_max = np.sqrt(r_f_max**2 - P**2) + q_f
-            Q_g_min = np.nan
+            Q_g_max = sqrt(r_f_max**2 - P**2) + q_f
+            Q_g_min = nan
         else:
-            Q_g_min = np.nan
-            Q_g_max = np.nan
+            Q_g_min = nan
+            Q_g_max = nan
         return (Q_g_min, Q_g_max, valid)
     
     def get_rotor_limits_mvar(self, op: GeneratorOperatingPoint) -> tuple[float, float]: 
@@ -129,7 +128,7 @@ class CapabilityDiagram:
                 valid (bool): Flag indicating the rotor current limits are feasible.
         """
         Q_min_pu, Q_max_pu, valid_rotor = self.get_rotor_limits_pu(op)
-        return (Q_min_pu*op.S_n_mva, Q_max_pu*op.S_n_mva, valid_rotor)
+        return (Q_min_pu*self.gen_data.S_n_mva, Q_max_pu*self.gen_data.S_n_mva, valid_rotor)
     
     def get_stability_limit_pu(self, op: GeneratorOperatingPoint) -> tuple[float, float]:
         """Calculates the minimum reactive power limit based on maximum rotor angle.
@@ -137,7 +136,7 @@ class CapabilityDiagram:
         Returns:
             float: Minimum reactive power limit in per-unit [pu].
         """
-        P, Q, V = op.get_PQV_pu() 
+        P, Q, V = op.get_PQV_pu(self.gen_data.S_n_mva) 
         c = -V**2/(self.trafo_data.tap_ratio**2*self.x_tot_pu)
         Q_min = self._m * P + c
         return Q_min
@@ -149,7 +148,7 @@ class CapabilityDiagram:
             float: Minimum reactive power limit in Mvar [Mvar].
         """
         Q_min_pu = self.get_stability_limit_pu(op)
-        return Q_min_pu*op.S_n_mva
+        return Q_min_pu*self.gen_data.S_n_mva
 
     def get_voltage_limits_pu(self, op: GeneratorOperatingPoint) -> tuple[float, float, bool]:
         """Calculates the minimum and maximum reactive power limits based on voltage constraints.
@@ -160,23 +159,23 @@ class CapabilityDiagram:
                 Q_max_pu (float): Maximum reactive power limit. [pu]
                 valid (bool): Flag indicating the voltage limits are feasible.
         """
-        P, Q, V = op.get_PQV_pu()        
+        P, Q, V = op.get_PQV_pu(self.gen_data.S_n_mva)        
         k1 = V/self.trafo_data.tap_ratio/self.trafo_data.X_T 
         k2_min = (self.gen_data.V_g_min*k1)
         k2_max = (self.gen_data.V_g_max*k1)
         valid = k2_min >= P 
 
         if self.trafo_data.X_T <= 0: 
-            return (-np.inf, np.inf, valid)
+            return (-inf, inf, valid)
         
         valid_voltage = self.gen_data.V_g_min <= V <= self.gen_data.V_g_max
 
         if valid:
-            Q_min = np.sqrt(k2_min**2 - P**2) - k1*V/self.trafo_data.tap_ratio
-            Q_max = np.sqrt(k2_max**2 - P**2) - k1*V/self.trafo_data.tap_ratio
+            Q_min = sqrt(k2_min**2 - P**2) - k1*V/self.trafo_data.tap_ratio
+            Q_max = sqrt(k2_max**2 - P**2) - k1*V/self.trafo_data.tap_ratio
         else:
-            Q_min = np.nan
-            Q_max = np.nan
+            Q_min = nan
+            Q_max = nan
         return (Q_min, Q_max, valid_voltage)
     
     def get_voltage_limits_mvar(self, op: GeneratorOperatingPoint) -> tuple[float, float, bool]:
@@ -189,7 +188,7 @@ class CapabilityDiagram:
                 valid (bool): Flag indicating the voltage limits are feasible.
         """
         Q_min_pu, Q_max_pu, valid_voltage = self.get_voltage_limits_pu(op)
-        return (Q_min_pu*op.S_n_mva, Q_max_pu*op.S_n_mva, valid_voltage)
+        return (Q_min_pu*self.gen_data.S_n_mva, Q_max_pu*self.gen_data.S_n_mva, valid_voltage)
     
     def get_generator_limits(self, op: GeneratorOperatingPoint) -> CapabilityResult: 
         """Calculates the reactive power limits based on the generator's operational constraints.
@@ -200,19 +199,22 @@ class CapabilityDiagram:
         Returns:
             CapabilityResult: A dataclass containing the reactive power limits and validation checks.
         """
-        P, Q, V = op.get_PQV_pu()
+        P, Q, V = op.get_PQV_pu(self.gen_data.S_n_mva)
         is_valid_power = self.gen_data.P_g_min_pu <= P <= self.gen_data.P_g_max_pu 
         Q_min_1, Q_max_1, valid_stator = self.get_stator_limits_pu(op) 
         Q_min_2, Q_max_2, valid_rotor = self.get_rotor_limits_pu(op)
         Q_min_3 = self.get_stability_limit_pu(op)
-        Q_max_3 = np.inf # just for consistency with the comparisons. 
+        Q_max_3 = inf # just for consistency with the comparisons. 
         Q_min_4, Q_max_4, valid_voltage = self.get_voltage_limits_pu(op)
-        Q_min = np.nanmax([Q_min_1, Q_min_2, Q_min_3, Q_min_4], axis=0)
-        Q_max = np.nanmin([Q_max_1, Q_max_2, Q_max_3, Q_max_4], axis=0)
+
+        Q_min_vals = [Q_min_1, Q_min_2, Q_min_3, Q_min_4]
+        Q_max_vals = [Q_max_1, Q_max_2, Q_max_3, Q_max_4]
+        Q_min = max(Q_min_vals)
+        Q_max = min(Q_max_vals)
 
         # The following code classifies which limiter is the most restrictive for the reactive power limits.
-        limit_min = np.nanargmax([Q_min_1, Q_min_2, Q_min_3, Q_min_4])
-        limit_max = np.nanargmin([Q_max_1, Q_max_2, Q_max_3, Q_max_4])
+        limit_min = Q_min_vals.index(Q_min)
+        limit_max = Q_max_vals.index(Q_max)
 
         cd_res = CapabilityResult(op, Q_min, Q_max, Q_min_1, Q_max_1, Q_min_2, Q_max_2, Q_min_3, Q_min_4, Q_max_4,
                                   valid_stator, valid_rotor, is_valid_power, valid_voltage, limit_min, limit_max)

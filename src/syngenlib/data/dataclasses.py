@@ -1,43 +1,38 @@
 from dataclasses import dataclass
 from typing import Optional
 from math import sqrt
-import numpy as np
-
 
 @dataclass 
 class GeneratorOperatingPoint: 
-    """A dataclass for storing a generator operating point. 
+    """A dataclass for storing a generator operating point. The units of P and Q should be MW and Mvar respectively. V should be in per-unit.
     
     Attributes: 
-        S_n_mva (float): Rated power of the generator [MVA] 
-        V_base_kV (float): Base voltage [kV] 
-        P_mw (float): Active power [MW] 
-        Q_mvar (float): Reactive power [Mvar]
-        V_pu (float): Voltage magnitude [pu]"""
+        P (float): Active power [MW]
+        Q (float): Reactive power [Mvar]
+        V_pu (float): Voltage magnitude in per-unit
+    """
     
-    S_n_mva: float 
-    V_base_kV: float 
-    P_mw: float 
-    Q_mvar: float 
+    P: float 
+    Q: float 
     V_pu: float
 
-    def get_PQV_pu(self): 
+    def get_PQV_pu(self, S_base_mva: float) -> tuple[float, float, float]: 
         """Get the active power, reactive power, and voltage magnitude in per-unit.
         
         Returns: 
             Tuple[float, float, float]: 
             (P_pu, Q_pu, V_pu)
         """
-        return (self.P_mw / self.S_base_mva, self.Q_mvar / self.S_base_mva, self.V_pu)
+        return (self.P / S_base_mva, self.Q / S_base_mva, self.V_pu)
     
     def get_PQV_electrical_units(self): 
-        """Get the active power, reactive power, and voltage magnitude in electrical units.
+        """Get the active power and reactive power in electrical units, and the voltage in per-unit.
         
         Returns: 
             Tuple[float, float, float]: 
-            (P_mw, Q_mvar, V_kV)
+            (P_mw, Q_mvar, V_pu)
         """
-        return (self.P_mw, self.Q_mvar, self.V_pu * self.V_base_kV)
+        return (self.P, self.Q, self.V_pu * self.V_pu)
     
 
 @dataclass
@@ -204,7 +199,6 @@ class TransformerDataClass:
         self.B = self.Z_12
         self.C = self.Y_lv * self.Y_hv * self.Z_12 + self.Y_lv + self.Y_hv
         self.D = self.Y_lv * self.Z_12 + 1
-        self.ABCD_mat = np.array([[self.A, self.B], [self.C, self.D]])
 
     def change_base(self, S_new_mva: float, V_new_kV: float, inplace: Optional[bool] = False):
         """
