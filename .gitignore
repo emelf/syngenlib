@@ -124,7 +124,6 @@ dmypy.json
 .pyre/
 
 # Untracked files: 
-tests/
 /testing.ipynb
 
 gen_data_filtered.xlsx
