@@ -1,4 +1,4 @@
-from .dataclasses import GeneratorOperatingPoint, TransformerOperatingPoint
+from .data_types import GeneratorOperatingPoint, TransformerOperatingPoint
 from dataclasses import dataclass
 from typing import Sequence
 

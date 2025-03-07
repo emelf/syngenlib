@@ -56,7 +56,7 @@ class GeneratorLossModel:
         P, Q, V = op.get_PQV_pu(self.md.S_n_mva)
         I_a, I_f, E_q = self.calculate_generator_quantities(op)
         P_loss_stator = self.md.P_loss_nom_stator_pu * I_a**2 * self.md.S_n_mva
-        P_loss_rotor = self.md.P_loss_nom_rotor_pu * I_f**2 * self.md.S_n_mva
+        P_loss_rotor = self.md.P_loss_nom_rotor_pu * (E_q/self.E_q_nom)**2 * self.md.S_n_mva
         P_loss_core = self.md.P_loss_nom_core_pu * V**2 * self.md.S_n_mva
         P_loss_const = self.md.P_loss_nom_const_pu*self.md.S_n_mva
         return GeneratorLossResult(op, I_f, E_q, P_loss_stator, P_loss_rotor, P_loss_core, P_loss_const)

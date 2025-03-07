@@ -7,13 +7,13 @@ class GeneratorOperatingPoint:
     """A dataclass for storing a generator operating point. The units of P and Q should be MW and Mvar respectively. V should be in per-unit.
     
     Attributes: 
-        P (float): Active power [MW]
-        Q (float): Reactive power [Mvar]
-        V_pu (float): Voltage magnitude in per-unit
+        P_mw (float): Active power [MW]
+        Q_mvar (float): Reactive power [Mvar]
+        V_pu (float): Voltage magnitude [per-unit]
     """
     
-    P: float 
-    Q: float 
+    P_mw: float 
+    Q_mvar: float 
     V_pu: float
 
     def get_PQV_pu(self, S_base_mva: float) -> tuple[float, float, float]: 
@@ -23,7 +23,7 @@ class GeneratorOperatingPoint:
             Tuple[float, float, float]: 
             (P_pu, Q_pu, V_pu)
         """
-        return (self.P / S_base_mva, self.Q / S_base_mva, self.V_pu)
+        return (self.P_mw / S_base_mva, self.Q_mvar / S_base_mva, self.V_pu)
     
     def get_PQV_electrical_units(self): 
         """Get the active power and reactive power in electrical units, and the voltage in per-unit.
@@ -32,7 +32,7 @@ class GeneratorOperatingPoint:
             Tuple[float, float, float]: 
             (P_mw, Q_mvar, V_pu)
         """
-        return (self.P, self.Q, self.V_pu * self.V_pu)
+        return (self.P_mw, self.Q_mvar, self.V_pu)
     
 
 @dataclass
