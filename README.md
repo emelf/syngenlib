@@ -1,6 +1,6 @@
 # SynGenLib
 
-**SynGenLib** is an object-oriented Python library that establishes a framework for defining dataclasses of synchronous generators and their respective step-up transformers. Using these dataclasses, one can define objects that help calculate the power losses of synchronous machines according to the method presented in [1]. Additionally, the library provides functionalities for defining generator capability diagrams based on the system of equations established in [2], with the purpose of calculating reactive power limits.
+**SynGenLib** (Synchronous Generator Library) is an object-oriented Python library that establishes a framework for defining dataclasses of synchronous generators and their respective step-up transformers. Using these dataclasses, one can calculate the power losses and reactive power capability of synchronous machines and their respective step-up transformer. The power loss calculation method is in accordance with [1] for the generator model. The generator reactive power capability is calculated according to [2].
 
 ## Directory Organization
 
