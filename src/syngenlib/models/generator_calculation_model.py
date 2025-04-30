@@ -189,10 +189,8 @@ class GeneratorCalculationModel:
                 Q_max_pu (float): Maximum reactive power limit. [pu]
                 valid (bool): Flag indicating the rotor current limits are feasible.
         """
-        E_q_max = self.capability_data.I_f_max_pu*self.saturation_model.k_If
-        E_q_min = self.capability_data.I_f_min_pu*self.saturation_model.k_If
-        r_f_max = E_q_max*V/(self.trafo_data.tap_ratio*self.x_tot_pu)
-        r_f_min = E_q_min*V/(self.trafo_data.tap_ratio*self.x_tot_pu)
+        r_f_max = self.capability_data.E_q_max*V/(self.trafo_data.tap_ratio*self.x_tot_pu)
+        r_f_min = self.capability_data.E_q_min*V/(self.trafo_data.tap_ratio*self.x_tot_pu)
         q_f = -V**2/(self.trafo_data.tap_ratio**2*self.x_tot_pu)
         below_min = P < r_f_min
         valid = P <= r_f_max

@@ -61,8 +61,6 @@ class CapabilityModelDataclass:
         P_max_pu (float): Maximum active power [pu]
         I_a_min_pu (float): Minimum armature current [pu]
         I_a_max_pu (float): Maximum armature current [pu]
-        I_f_min_pu (float): Minimum field current [pu]
-        I_f_max_pu (float): Maximum field current [pu]
         E_q_min (float): Minimum internal voltage [pu]
         E_q_max (float): Maximum internal voltage [pu]
         V_g_min (float): Minimum generator terminal voltage [pu]
@@ -73,8 +71,6 @@ class CapabilityModelDataclass:
     P_max_pu: float
     I_a_min_pu: float 
     I_a_max_pu: float 
-    I_f_min_pu: float 
-    I_f_max_pu: float
     E_q_min: float
     E_q_max: float
     V_g_min: float
@@ -82,14 +78,20 @@ class CapabilityModelDataclass:
     rotor_angle_max_rad: float
 
     @staticmethod
-    def default_limits() -> 'CapabilityModelDataclass':
+    def default_limits(nom_op: GeneratorOperatingPoint, gen_data: GeneratorDataclass) -> 'CapabilityModelDataclass':
         """
         Create a CapabilityModelDataClass instance with default limits.
 
         Returns:
             CapabilityModelDataClass: Instance with default limits.
         """
-        return CapabilityModelDataclass(0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.1, 1.5, 0.9, 1.1, 30.0*pi/180.0)
+        V = nom_op.V_pu
+        P = nom_op.P_mw / gen_data.S_n_mva
+        Q = nom_op.Q_mvar / gen_data.S_n_mva
+        E_q_min = 0.1 
+        E_q_square = V**2 * ((1.0 + gen_data.X_d_u * Q / (V**2))**2 + (gen_data.X_d_u * P / (V**2))**2)
+        E_q_max = sqrt(E_q_square)
+        return CapabilityModelDataclass(0.0, 1.0, 0.0, 1.0, E_q_min, E_q_max, 0.9, 1.1, 30.0*pi/180.0)
 
 
 @dataclass
