@@ -1,6 +1,6 @@
 from ..data.data_types import GeneratorOperatingPoint, BranchOperatingPoint 
-from ..data.result_classes import GeneratorBranchResults, PowerLossResult, CapabilityResult
-from ..data.components import GeneratorDataclass, TransformerDataClass, GeneratorLossDataclass, CapabilityModelDataclass
+from ..data.result_classes import GeneratorBranchResults, PowerLossResult, CapabilityResults
+from ..data.components import GeneratorDataclass, TransformerDataclass, GeneratorLossDataclass, CapabilityModelDataclass
 from .saturation_model import SaturationBaseClass, LinearSaturationModel
 from typing import Optional, Union
 from math import sqrt, atan, atan2, nan, inf
@@ -9,14 +9,14 @@ from scipy.optimize import root
 
 class GeneratorCalculationModel: 
     def __init__(self, gen_data: GeneratorDataclass, 
-                 trafo_data: Optional[TransformerDataClass]=None, 
+                 trafo_data: Optional[TransformerDataclass]=None, 
                  power_loss_data: Optional[GeneratorLossDataclass]=None,
                  saturation_model: Optional[SaturationBaseClass] = None, 
                  capability_model_data: Optional[CapabilityModelDataclass] = None):
         self.gen_data = gen_data
 
         if trafo_data is None: 
-            t = TransformerDataClass(gen_data.S_n_mva, gen_data.V_nom_kV, gen_data.V_nom_kV, 
+            t = TransformerDataclass(gen_data.S_n_mva, gen_data.V_nom_kV, gen_data.V_nom_kV, 
                                      0.0, 0.0, 0.0, 0.0, 1.0, 0.5)
             self.trafo_data = t
         else: 
@@ -105,9 +105,10 @@ class GeneratorCalculationModel:
         S_g_pu = V_g_pu * I_a_pu.conjugate()
         P_g_pu = S_g_pu.real
         Q_g_pu = S_g_pu.imag
-        E_q_square = V_g_pu**2 * ((1.0 + self.gen_data.X_d_u * Q_g_pu / (V_g_pu**2))**2 + (self.gen_data.X_d_u * P_g_pu / (V_g_pu**2))**2)
+        V_g_abs = abs(V_g_pu)
+        E_q_square = V_g_abs**2 * ((1.0 + self.gen_data.X_d_u * Q_g_pu / (V_g_abs**2))**2 + (self.gen_data.X_d_u * P_g_pu / (V_g_abs**2))**2)
         E_q = sqrt(E_q_square)
-        I_f = self.saturation_model.get_field_current(P_g_pu, Q_g_pu, V_g_pu, self.gen_data)
+        I_f = self.saturation_model.get_field_current(P_g_pu, Q_g_pu, V_g_abs, self.gen_data)
         return GeneratorBranchResults(P_g_pu, Q_g_pu, P_pu, Q_pu, V_g_pu, V_pu, E_q, I_f)
     
     def get_branch_losses(self, op: Union[GeneratorOperatingPoint, BranchOperatingPoint]) -> PowerLossResult: 
@@ -118,21 +119,21 @@ class GeneratorCalculationModel:
         else: 
             raise TypeError("operating_point must be of type GeneratorOperatingPoint or BranchOperatingPoint")
         
-        P_stator_loss_mw = self.power_loss_data.P_loss_nom_stator_pu * res.I_g**2 * self.gen_data.S_n_mva
-        P_rotor_loss_mw = self.power_loss_data.P_loss_nom_rotor_pu * res.I_f_pu**2 * self.gen_data.S_n_mva
-        P_core_loss_mw = self.power_loss_data.P_loss_nom_core_pu * res.V_g_pu**2 * self.gen_data.S_n_mva
+        P_stator_loss_mw = self.power_loss_data.P_loss_nom_stator_pu * abs(res.I_g)**2 * self.gen_data.S_n_mva
+        P_rotor_loss_mw = self.power_loss_data.P_loss_nom_rotor_pu * abs(res.I_f_pu)**2 * self.gen_data.S_n_mva
+        P_core_loss_mw = self.power_loss_data.P_loss_nom_core_pu * abs(res.V_g_pu)**2 * self.gen_data.S_n_mva
         P_const_loss_mw = self.power_loss_data.P_loss_nom_const_pu * self.gen_data.S_n_mva
         trafo_loss_mw = abs(res.P_g_pu - res.P_branch_pu) * self.gen_data.S_n_mva
         return PowerLossResult(P_stator_loss_mw, P_rotor_loss_mw, P_core_loss_mw, P_const_loss_mw, trafo_loss_mw)
     
-    def calculate_Q_capability(self, operating_point: Union[GeneratorOperatingPoint, BranchOperatingPoint]) -> CapabilityResult: 
+    def calculate_Q_capability(self, operating_point: Union[GeneratorOperatingPoint, BranchOperatingPoint]) -> CapabilityResults: 
         """Calculates the reactive power limits based on the generator's operational constraints.
         
         Args:
             op (GeneratorOperatingPoint): The generator operating point. 
             
         Returns:
-            CapabilityResult: A dataclass containing the reactive power limits and validation checks.
+            CapabilityResults: A dataclass containing the reactive power limits and validation checks.
         """
         if type(operating_point) == GeneratorOperatingPoint: 
             res = self._calculate_branch_results_from_gen_op(operating_point)
@@ -158,7 +159,7 @@ class GeneratorCalculationModel:
         limit_min = Q_min_vals.index(Q_min)
         limit_max = Q_max_vals.index(Q_max)
 
-        cd_res = CapabilityResult(Q_min, Q_max, Q_min_1, Q_max_1, Q_min_2, Q_max_2, Q_min_3, Q_min_4, Q_max_4,
+        cd_res = CapabilityResults(Q_min, Q_max, Q_min_1, Q_max_1, Q_min_2, Q_max_2, Q_min_3, Q_min_4, Q_max_4,
                                   valid_stator, valid_rotor, valid_P, valid_voltage, limit_min, limit_max)
         return cd_res
         

@@ -95,7 +95,7 @@ class CapabilityModelDataclass:
 
 
 @dataclass
-class TransformerDataClass:
+class TransformerDataclass:
     """
     A dataclass for storing transformer model parameters.
 
@@ -206,7 +206,7 @@ class TransformerDataClass:
             self.P_Fe = P_Fe_new
             self.__post_init__()
         else:
-            return TransformerDataClass(S_new_mva, V_new_kV, V_SCH_new, P_Cu_new,
+            return TransformerDataclass(S_new_mva, V_new_kV, V_SCH_new, P_Cu_new,
                                         I_E_new, P_Fe_new, self.tap_ratio, self.Z_lv_ratio)
 
     def change_tap_ratio(self, new_tap_ratio: float):

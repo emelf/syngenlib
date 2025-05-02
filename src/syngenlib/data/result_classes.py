@@ -47,7 +47,7 @@ class PowerLossResult:
 
     
 @dataclass
-class CapabilityResult:
+class CapabilityResults:
     """
     A dataclass for storing capability results of a generator operating at an operating point, including various reactive power limits and validation checks.
 
