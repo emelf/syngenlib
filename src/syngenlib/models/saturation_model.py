@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from math import sqrt, atan2, cos, sin
 from ..data.components import GeneratorDataclass
-from ..data.data_types import GeneratorOperatingPoint
+from ..data.result_classes import GeneratorBranchResults 
 
 class SaturationBaseClass(ABC):
     """
@@ -29,22 +29,16 @@ class LinearSaturationModel(SaturationBaseClass):
         k_f (float): Field current constant [pu]
     """
 
-    def __init__(self, gen_data: GeneratorDataclass, nom_operating_point: GeneratorOperatingPoint): 
+    def __init__(self, gen_data: GeneratorDataclass): 
         super().__init__()
-        P_g_pu, Q_g_pu, V_g_pu = nom_operating_point.get_PQV_pu(gen_data.S_n_mva)
-        E_q = self._get_E_q(P_g_pu, Q_g_pu, V_g_pu, gen_data)
+        P_g_pu = gen_data.cos_phi
+        Q_g_pu = sqrt(1 - P_g_pu**2) 
+        V_g_pu = 1.0 
+        # E_q = self._get_E_q(P_g_pu, Q_g_pu, V_g_pu, gen_data) TODO 
+        E_q = 1.6 
         self.k_If = 1.0/E_q # Assumes nominal operating point has I_f = 1.0 pu. 
+        self.S_base_mva = gen_data.S_n_mva
 
-    def get_field_current(self, P_g_pu: float, Q_g_pu: float, V_g_pu: float, gen_data: GeneratorDataclass) -> float:
-        E_q = self._get_E_q(P_g_pu, Q_g_pu, V_g_pu, gen_data)
-        I_f = self.k_If * E_q
+    def get_field_current(self, gen_res: GeneratorBranchResults) -> float:
+        I_f = self.k_If * gen_res.E_q_pu
         return I_f
-
-    def _get_E_q(self, P_g_pu: float, Q_g_pu: float, V_g_pu: float, gen_data: GeneratorDataclass) -> float:
-        I_a = sqrt(P_g_pu**2 + Q_g_pu**2) / V_g_pu
-        phi = atan2(Q_g_pu, P_g_pu)
-        numerator = gen_data.X_q_u * I_a * cos(phi) - gen_data.R_a*I_a*sin(phi) 
-        denum = V_g_pu + gen_data.R_a*I_a*cos(phi) + gen_data.X_q_u*I_a*sin(phi) 
-        delta = atan2(numerator, denum) 
-        E_q = V_g_pu * cos(delta) + gen_data.R_a*I_a*cos(phi + delta) + gen_data.X_d_u*I_a*sin(phi + delta)
-        return E_q

@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from typing import Optional
 from math import sqrt, pi
+import numpy as np
 from .data_types import GeneratorOperatingPoint
 
 @dataclass
@@ -11,14 +12,14 @@ class GeneratorDataclass:
     Attributes:
         S_n_mva (float): Rated apparent power of the generator [MVA]
         V_nom_kV (float): Rated nominal voltage of the generator [kV]
-        nominal_operating_point (GeneratorOperatingPoint): Nominal operating point of the generator
+        cos_phi (float): The inductuve power factor at nominal operating point
         X_d_u (float): Unsaturated d-axis reactance of the generator [pu]
         X_q_u (float): Unsaturated q-axis reactance of the generator [pu]
         R_a (float): Resistance at nominal operating point (e.g., 75 deg. C) [pu]
     """
     S_n_mva: float
     V_nom_kV: float
-    nominal_operating_point: GeneratorOperatingPoint
+    cos_phi: float
     X_d_u: float
     X_q_u: float
     R_a: float
@@ -78,16 +79,17 @@ class CapabilityModelDataclass:
     rotor_angle_max_rad: float
 
     @staticmethod
-    def default_limits(nom_op: GeneratorOperatingPoint, gen_data: GeneratorDataclass) -> 'CapabilityModelDataclass':
+    def default_limits(gen_data: GeneratorDataclass) -> 'CapabilityModelDataclass':
         """
         Create a CapabilityModelDataClass instance with default limits.
 
         Returns:
             CapabilityModelDataClass: Instance with default limits.
         """
-        V = nom_op.V_pu
-        P = nom_op.P_mw / gen_data.S_n_mva
-        Q = nom_op.Q_mvar / gen_data.S_n_mva
+
+        V = 1.0
+        P = gen_data.cos_phi 
+        Q = sqrt(1.0 - P**2)
         E_q_min = 0.1 
         E_q_square = V**2 * ((1.0 + gen_data.X_d_u * Q / (V**2))**2 + (gen_data.X_d_u * P / (V**2))**2)
         E_q_max = sqrt(E_q_square)
@@ -127,87 +129,30 @@ class TransformerDataclass:
 
         This method calculates derived attributes based on the initialized values.
         """
-        self.R_T = self.P_Cu
-        self.X_T = sqrt(self.V_SCH**2 - self.R_T**2)
-        self.Z_T = self.R_T + 1j * self.X_T
-        self.G_Fe = self.P_Fe
-        self.B_mu = sqrt(self.I_E**2 - self.G_Fe**2)
-        self.Y_M = self.G_Fe - 1j * self.B_mu
+        x_sch = sqrt(self.V_SCH**2 - self.P_Cu**2) 
+        self.Z_hv = (1.0 - self.Z_lv_ratio)*(self.P_Cu + 1j*x_sch)
+        self.Z_lv = self.Z_lv_ratio*(self.P_Cu + 1j*x_sch) 
+        if self.I_E < 1e-7: 
+            self.Y_m = 0.0
+        else: 
+            G_M = self.P_Fe 
+            B_M = sqrt(self.I_E**2 - G_M**2)
+            self.Y_m = G_M - 1j * B_M
 
-        self._calc_pi_parameters()
-        self._calc_power_matrix()
-        self.Z_lv = 1.0/self.Y_lv if abs(self.Y_lv)> 1e-6 else 1e6
-        self.Z_hv = 1.0/self.Y_hv if abs(self.Y_hv)> 1e-6 else 1e6
+        self.A = 1.0 + self.Y_m * self.Z_lv 
+        self.B = self.Z_lv + self.Z_hv + self.Y_m * self.Z_lv * self.Z_hv 
+        self.C = self.Y_m 
+        self.D = 1.0 + self.Y_m * self.Z_hv
 
-    def _calc_pi_parameters(self):
-        """
-        Calculate the π-equivalent model parameters for the transformer.
-        """
-        if abs(self.Z_T) < 1e-9: 
-            self.Y_hv = 0.0 
-            self.Y_lv = 0.0 
-            self.Z_12 = 0.0
-            return
+        self.M = np.array([[self.A, self.B], [self.C, self.D]]) 
 
-        Y_lv = 1 / (self.Z_T * self.Z_lv_ratio)
-        Y_hv = 1 / (self.Z_T * (1.0 - self.Z_lv_ratio))
+        Y = 1/self.B 
+        Y1 = (self.D - 1.0) / self.B 
+        Y2 = (self.A - 1.0) / self.B 
 
-        # Account for the tap changer
-        Y_hv_12 = Y_hv * self.tap_ratio
-        Y_hv_1 = Y_hv * (1 - self.tap_ratio)
-        Y_hv_2 = Y_hv * self.tap_ratio * (self.tap_ratio - 1)
-        Y_lv_12 = Y_lv * self.tap_ratio**(-2)
-
-        # Collect and transform from star to delta
-        Y_1_star = Y_hv_12
-        Y_2_star = Y_lv_12
-        Y_3_star = Y_hv_2 + self.Y_M
-
-        Y_num = Y_1_star + Y_2_star + Y_3_star
-        Y_12 = Y_1_star * Y_2_star / Y_num
-        Y_23 = Y_2_star * Y_3_star / Y_num
-        Y_31 = Y_3_star * Y_1_star / Y_num
-        self.Y_hv = Y_31 + Y_hv_1
-        self.Y_lv = Y_23
-        self.Z_12 = 1 / Y_12
-
-    def _calc_power_matrix(self):
-        """
-        Calculate the ABCD parameters matrix used to compute the voltage and current 
-        at the sending side given the receiving side values.
-        """
-        self.A = self.Y_hv * self.Z_12 + 1
-        self.B = self.Z_12
-        self.C = self.Y_lv * self.Y_hv * self.Z_12 + self.Y_lv + self.Y_hv
-        self.D = self.Y_lv * self.Z_12 + 1
-
-    def change_base(self, S_new_mva: float, V_new_kV: float, inplace: Optional[bool] = False):
-        """
-        Change the transformer's base units to match those of another system.
-
-        Args:
-            S_new_mva (float): New base power [MVA]
-            V_new_kV (float): New base voltage [kV]
-            inplace (Optional[bool]): If True, modifies the current instance. If False, returns a new transformer object.
-        """
-        Z_b_old = self.V_nom_lv_kV**2 / self.S_n_mva
-        Z_b_new = V_new_kV**2 / S_new_mva
-        Z_change = Z_b_old / Z_b_new
-        Y_change = 1 / Z_change
-        V_SCH_new = self.V_SCH * Z_change
-        P_Cu_new = self.P_Cu * Z_change
-        I_E_new = self.I_E * Y_change
-        P_Fe_new = self.P_Fe * Y_change
-
-        if inplace:
-            self.V_SCH = V_SCH_new
-            self.P_Cu = P_Cu_new
-            self.I_E = I_E_new
-            self.P_Fe = P_Fe_new
-            self.__post_init__()
-        else:
-            return TransformerDataclass(S_new_mva, V_new_kV, V_SCH_new, P_Cu_new,
-                                        I_E_new, P_Fe_new, self.tap_ratio, self.Z_lv_ratio)
+        self.Y_bus = np.array([[Y + Y1, -Y], [-Y, Y + Y2]])
+        self.G_bus = self.Y_bus.real
+        self.B_bus = self.Y_bus.imag
 
     def change_tap_ratio(self, new_tap_ratio: float):
         """
@@ -218,5 +163,6 @@ class TransformerDataclass:
         """
         self.tap_ratio = new_tap_ratio
         self.__post_init__()
+
 
 

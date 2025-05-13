@@ -3,20 +3,18 @@ from math import sqrt, atan2
 
 @dataclass 
 class GeneratorBranchResults: 
-    P_g_pu: float 
-    Q_g_pu: float
-    P_branch_pu: float
-    Q_branch_pu: float
+    P_g_mw: float 
+    Q_g_mvar: float
+    P_branch_mw: float
+    Q_branch_mvar: float
     V_g_pu: float
     V_grid_pu: float
-    E_q_pu: float
-    I_f_pu: float
 
-    def __post_init__(self): 
-        self.I_g = sqrt(self.P_g_pu**2 + self.Q_g_pu**2)/self.V_g_pu
-        self.I_branch = sqrt(self.P_branch_pu**2 + self.Q_branch_pu**2)/self.V_grid_pu
-        self.phi_g = atan2(self.Q_g_pu, self.P_g_pu)
-        self.phi_branch = atan2(self.Q_branch_pu, self.P_branch_pu) 
+    # def __post_init__(self): 
+    #     self.I_g = sqrt(self.P_g_pu**2 + self.Q_g_pu**2)/self.V_g_pu
+    #     self.I_branch = sqrt(self.P_branch_pu**2 + self.Q_branch_pu**2)/self.V_grid_pu
+    #     self.phi_g = atan2(self.Q_g_pu, self.P_g_pu)
+    #     self.phi_branch = atan2(self.Q_branch_pu, self.P_branch_pu) 
 
 
 @dataclass
@@ -31,7 +29,7 @@ class PowerLossResult:
         P_loss_const_pu (float): Constant power losses (e.g., friction, windage) [pu]
     """
     P_loss_stator_mw: float
-    P_loss_rotor_mw: float
+    P_loss_rotor_mw: float 
     P_loss_core_mw: float
     P_loss_const_mw: float
     trafo_loss_mw: float
