@@ -12,7 +12,7 @@ class SaturationBaseClass(ABC):
         pass # Initialize any common attributes or methods here
 
     @abstractmethod
-    def get_field_current(self, P_g_pu: float, Q_g_pu: float, V_g_pu: float, gen_data: GeneratorDataclass) -> float:
+    def get_field_current(self, branch_res: GeneratorBranchResults, E_q: float) -> float:
         """ 
         Returns the per-unit field current based on the generator's active power, reactive power, and voltage."""
         return NotImplementedError("This method should be overridden by subclasses")
@@ -31,14 +31,13 @@ class LinearSaturationModel(SaturationBaseClass):
 
     def __init__(self, gen_data: GeneratorDataclass): 
         super().__init__()
-        P_g_pu = gen_data.cos_phi
-        Q_g_pu = sqrt(1 - P_g_pu**2) 
+        P_g_pu = gen_data.cos_phi 
+        Q_g_pu = sqrt(1.0 - P_g_pu**2)
         V_g_pu = 1.0 
-        # E_q = self._get_E_q(P_g_pu, Q_g_pu, V_g_pu, gen_data) TODO 
-        E_q = 1.6 
-        self.k_If = 1.0/E_q # Assumes nominal operating point has I_f = 1.0 pu. 
-        self.S_base_mva = gen_data.S_n_mva
+        I_a = (P_g_pu - 1.0j*Q_g_pu) / V_g_pu
+        self.E_q_nom = abs(V_g_pu  + (gen_data.R_a + 1j*gen_data.X_q_u)*I_a)
+        self.k_If = 1.0/self.E_q_nom  
 
-    def get_field_current(self, gen_res: GeneratorBranchResults) -> float:
-        I_f = self.k_If * gen_res.E_q_pu
-        return I_f
+    def get_field_current(self, branch_res: GeneratorBranchResults, E_q_pu: float) -> float:
+        I_f_pu = self.k_If * E_q_pu
+        return I_f_pu

@@ -7,14 +7,8 @@ class GeneratorBranchResults:
     Q_g_mvar: float
     P_branch_mw: float
     Q_branch_mvar: float
-    V_g_pu: float
-    V_grid_pu: float
-
-    # def __post_init__(self): 
-    #     self.I_g = sqrt(self.P_g_pu**2 + self.Q_g_pu**2)/self.V_g_pu
-    #     self.I_branch = sqrt(self.P_branch_pu**2 + self.Q_branch_pu**2)/self.V_grid_pu
-    #     self.phi_g = atan2(self.Q_g_pu, self.P_g_pu)
-    #     self.phi_branch = atan2(self.Q_branch_pu, self.P_branch_pu) 
+    V_g_kv: float
+    V_grid_kv: float
 
 
 @dataclass

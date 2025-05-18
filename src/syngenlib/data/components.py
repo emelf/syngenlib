@@ -93,7 +93,9 @@ class CapabilityModelDataclass:
         E_q_min = 0.1 
         E_q_square = V**2 * ((1.0 + gen_data.X_d_u * Q / (V**2))**2 + (gen_data.X_d_u * P / (V**2))**2)
         E_q_max = sqrt(E_q_square)
-        return CapabilityModelDataclass(0.0, 1.0, 0.0, 1.0, E_q_min, E_q_max, 0.9, 1.1, 30.0*pi/180.0)
+        V_g_min = 0.95 
+        V_g_max = 1.05
+        return CapabilityModelDataclass(0.0, 1.0, 0.0, 1.0, E_q_min, E_q_max, V_g_min, V_g_max, 30.0*pi/180.0)
 
 
 @dataclass
@@ -163,6 +165,21 @@ class TransformerDataclass:
         """
         self.tap_ratio = new_tap_ratio
         self.__post_init__()
+
+    @staticmethod
+    def default_transformer(S_n_mva: float, V_nom: float) -> 'TransformerDataclass':
+        """
+        Create a default transformer dataclass instance.
+
+        Args:
+            S_n_mva (float): Rated apparent power of the transformer [MVA]
+            V_nom (float): Rated nominal voltage of the transformer [kV]
+
+        Returns:
+            TransformerDataclass: Instance with default transformer parameters.
+        """
+        return TransformerDataclass(S_n_mva, V_nom, V_nom, 1e-8, 0.0, 0.0, 0.0)
+
 
 
 
