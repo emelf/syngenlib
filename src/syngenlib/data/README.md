@@ -43,8 +43,8 @@ $$
 To be compatible with power flow studies, and also for ease of calculating voltages and currents at any side of the transformer, SynGenLib builds an ABCD matrix from the transformer circuit such that:
 
 $$\begin{bmatrix} V_{hv} \\\\ I_{hv} \end{bmatrix} =
-\begin{bmatrix} A & B \\ C & D \end{bmatrix}
-\begin{bmatrix} V_{lv} \\ I_{lv} \end{bmatrix} $$
+\begin{bmatrix} A & B \\ \\ C & D \end{bmatrix}
+\begin{bmatrix} V_{lv} \\\\ I_{lv} \end{bmatrix} $$
 
 The equations for the ABCD factors are:
 
