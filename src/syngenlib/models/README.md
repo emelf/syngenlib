@@ -12,7 +12,7 @@ The relation between the HV side and the LV side of the transformer is expressed
 
 $$
 \begin{aligned}
-n' = n \cdot \frac{V_B^{GEN}}{V_B^{LV}}
+n' = n \cdot \frac{V_B^{GEN}}{V_B^{LV}} \\
 v_n = v_{lv} n' \\
 i_n = i_{lv} / n'
 \end{aligned}
