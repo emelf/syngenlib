@@ -1,6 +1,6 @@
 import unittest
 from syngenlib.data import GeneratorDataclass, TransformerDataclass, CapabilityModelDataclass
-from syngenlib.models import GeneratorCalculationModel, LinearSaturationModel
+from syngenlib.models import BranchCalculationModel, LinearSaturationModel
 from syngenlib.data import BranchOperatingPoint, GeneratorBranchResults
 
 """
@@ -55,15 +55,15 @@ class TestGeneratorBranchResults(unittest.TestCase):
         self.sol_8 = GeneratorBranchResults(25.0, 0.0, 24.731010813, -2.495154196, 0.924498765*V_g_nom, 0.92*self.T8.V_nom_hv_kV)
         self.sol_9 = GeneratorBranchResults(25.0, 0.0, 24.771259162, -2.052037273, 1.026995313*V_g_nom, 0.92*self.T9.V_nom_hv_kV)
         
-        self.gm_1 = GeneratorCalculationModel(self.gen_data, self.T1, None, self.sat_model, self.capability_data)
-        self.gm_2 = GeneratorCalculationModel(self.gen_data, self.T2, None, self.sat_model, self.capability_data)
-        self.gm_3 = GeneratorCalculationModel(self.gen_data, self.T3, None, self.sat_model, self.capability_data)
-        self.gm_4 = GeneratorCalculationModel(self.gen_data, self.T4, None, self.sat_model, self.capability_data)
-        self.gm_5 = GeneratorCalculationModel(self.gen_data, self.T5, None, self.sat_model, self.capability_data)
-        self.gm_6 = GeneratorCalculationModel(self.gen_data, self.T6, None, self.sat_model, self.capability_data)
-        self.gm_7 = GeneratorCalculationModel(self.gen_data, self.T7, None, self.sat_model, self.capability_data)
-        self.gm_8 = GeneratorCalculationModel(self.gen_data, self.T8, None, self.sat_model, self.capability_data)
-        self.gm_9 = GeneratorCalculationModel(self.gen_data, self.T9, None, self.sat_model, self.capability_data)
+        self.gm_1 = BranchCalculationModel(self.gen_data, self.T1, None, self.sat_model, self.capability_data)
+        self.gm_2 = BranchCalculationModel(self.gen_data, self.T2, None, self.sat_model, self.capability_data)
+        self.gm_3 = BranchCalculationModel(self.gen_data, self.T3, None, self.sat_model, self.capability_data)
+        self.gm_4 = BranchCalculationModel(self.gen_data, self.T4, None, self.sat_model, self.capability_data)
+        self.gm_5 = BranchCalculationModel(self.gen_data, self.T5, None, self.sat_model, self.capability_data)
+        self.gm_6 = BranchCalculationModel(self.gen_data, self.T6, None, self.sat_model, self.capability_data)
+        self.gm_7 = BranchCalculationModel(self.gen_data, self.T7, None, self.sat_model, self.capability_data)
+        self.gm_8 = BranchCalculationModel(self.gen_data, self.T8, None, self.sat_model, self.capability_data)
+        self.gm_9 = BranchCalculationModel(self.gen_data, self.T9, None, self.sat_model, self.capability_data)
     
     def _assert_branch_results_equal(self, expected: GeneratorBranchResults, actual: GeneratorBranchResults, scenario_num):
         """Helper method to assert that two GeneratorBranchResults objects are equal"""

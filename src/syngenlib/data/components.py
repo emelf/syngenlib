@@ -90,9 +90,11 @@ class CapabilityModelDataclass:
         V = 1.0
         P = gen_data.cos_phi 
         Q = sqrt(1.0 - P**2)
+        I_a = (P -1j*Q)/V
         E_q_min = 0.1 
         E_q_square = V**2 * ((1.0 + gen_data.X_d_u * Q / (V**2))**2 + (gen_data.X_d_u * P / (V**2))**2)
         E_q_max = sqrt(E_q_square)
+        # E_q_max = abs(V  + (gen_data.R_a + 1j*gen_data.X_q_u)*I_a)
         V_g_min = 0.95 
         V_g_max = 1.05
         return CapabilityModelDataclass(0.0, 1.0, 0.0, 1.0, E_q_min, E_q_max, V_g_min, V_g_max, 30.0*pi/180.0)

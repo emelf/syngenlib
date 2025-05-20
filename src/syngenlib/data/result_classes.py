@@ -44,15 +44,14 @@ class CapabilityResults:
     A dataclass for storing capability results of a generator operating at an operating point, including various reactive power limits and validation checks.
 
     Attributes:
-        Q_min_tot_pu (float): The effective minimum reactive power limit [pu]
-        Q_max_tot_pu (float): The effective maximum reactive power limit [pu]
-        Q_stator_min_pu (float): Minimum reactive power limited by stator current [pu]
-        Q_stator_max_pu (float): Maximum reactive power limited by stator current [pu]
-        Q_rotor_min_pu (float): Minimum reactive power limited by rotor current [pu]
-        Q_rotor_max_pu (float): Maximum reactive power limited by rotor current [pu]
-        Q_stab_min_pu (float): Minimum reactive power limited by stability [pu]
-        Q_v_min_pu (float): Minimum reactive power limited by voltage constraints [pu]
-        Q_v_max_pu (float): Maximum reactive power limited by voltage constraints [pu]
+        Q_min_tot (float): The effective minimum reactive power limit [Mvar]
+        Q_max_tot (float): The effective maximum reactive power limit [Mvar]
+        Q_stator_min_pu (float): Minimum reactive power limited by stator current [Mvar]
+        Q_stator_max_pu (float): Maximum reactive power limited by stator current [Mvar]
+        Q_rotor_max_pu (float): Maximum reactive power limited by rotor current [Mvar]
+        Q_stab_min_pu (float): Minimum reactive power limited by stability [Mvar]
+        Q_v_min_pu (float): Minimum reactive power limited by voltage constraints [Mvar]
+        Q_v_max_pu (float): Maximum reactive power limited by voltage constraints [Mvar]
         valid_stator_current (bool): Validation of stator current limits
         valid_rotor_current (bool): Validation of rotor current limits
         valid_active_power (bool): Validation of active power limits
@@ -63,15 +62,14 @@ class CapabilityResults:
             0 - Stator limit, 1 - Rotor limit, 2 - Stability limit, 3 - Voltage limit
     """
 
-    Q_min_tot_pu: float
-    Q_max_tot_pu: float
-    Q_stator_min_pu: float
-    Q_stator_max_pu: float
-    Q_rotor_min_pu: float
-    Q_rotor_max_pu: float
-    Q_stab_min_pu: float
-    Q_v_min_pu: float
-    Q_v_max_pu: float
+    Q_min_tot: float
+    Q_max_tot: float
+    Q_stator_min: float
+    Q_stator_max: float
+    Q_rotor_max: float
+    Q_stab_min: float
+    Q_v_min: float
+    Q_v_max: float
     valid_stator_current: bool
     valid_rotor_current: bool
     valid_active_power: bool

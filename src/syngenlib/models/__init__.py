@@ -1,2 +1,2 @@
-from .generator_calculation_model import GeneratorCalculationModel 
+from .branch_calculation_model import BranchCalculationModel 
 from .saturation_model import SaturationBaseClass, LinearSaturationModel
