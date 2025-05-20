@@ -82,6 +82,7 @@ $$ q_{lim} = \tan^{-1}(\delta^{max}) p_n - \frac{v_n}{n' x_{tot}} $$
 ### Voltage limits
 
 The reactive power is constrained by the voltage limits allowed on the generator terminal. There is a minimum and maximum limit, and **`min`** or **`max`** can replace the **`lim`** in the following equation to obtain $q_{min}$ and $q_{max}$.
+
 $$
 \begin{aligned}
 p_n \approx \frac{v_n v_g^{lim}}{n' x_t}\sin(\delta) \\
