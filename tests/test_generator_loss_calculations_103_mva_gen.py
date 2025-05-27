@@ -1,6 +1,6 @@
 import unittest
 from syngenlib.data import GeneratorDataclass, GeneratorLossDataclass, PowerLossResult
-from syngenlib.models import BranchCalculationModel, NonLinearSaturationModel1
+from syngenlib.models import BranchCalculationModel, LinearSaturationModel, NonLinearSaturationModel1
 from syngenlib.data import GeneratorOperatingPoint, GeneratorBranchResults
 import numpy as np 
 
@@ -25,6 +25,7 @@ pl_data = GeneratorLossDataclass(P_loss_nom_stator_pu=P_l_stator_nom,
                                  P_loss_nom_core_pu=P_l_core_nom, 
                                  P_loss_nom_const_pu=P_l_const_nom)
 
+# sat_model = LinearSaturationModel(gen_data)
 sat_model = NonLinearSaturationModel1(gen_data, b_v=1.0, k=1.0308, C_m=0.16, n=7, X_p=0.141)
 
 gen_model = BranchCalculationModel(gen_data, power_loss_data=pl_data, saturation_model=sat_model)  
@@ -97,26 +98,18 @@ res_8_from_paper = PowerLossResult(P_loss_stator_mw=(11.72+5.57)/1000,
                                    P_loss_const_mw=(240.9+172.92)/1000,
                                    trafo_loss_mw=0.0)
 
-print(res_1)
-print(res_1_from_paper)
-print("\n")
-print(res_2)
-print(res_2_from_paper)
-print("\n")
-print(res_3)
-print(res_3_from_paper)
-print("\n")
-print(res_4)
-print(res_4_from_paper)
-print("\n")
-print(res_5)
-print(res_5_from_paper)
-print("\n")
-print(res_6)
-print(res_6_from_paper)
-print("\n")
-print(res_7)
-print(res_7_from_paper)
-print("\n")
-print(res_8)
-print(res_8_from_paper)
+def print_results(case_name: str, res: PowerLossResult, res_from_paper: PowerLossResult): 
+    print(f"\nResults for {case_name}:")
+    print(f"Stator Losses: {res.P_loss_stator_mw:.4f} MW, Expected: {res_from_paper.P_loss_stator_mw:.4f} MW. % diff: {100 * (res.P_loss_stator_mw - res_from_paper.P_loss_stator_mw) / res_from_paper.P_loss_stator_mw:.2f}%")
+    print(f"Rotor Losses: {res.P_loss_rotor_mw:.4f} MW, Expected: {res_from_paper.P_loss_rotor_mw:.4f} MW. % diff: {100 * (res.P_loss_rotor_mw - res_from_paper.P_loss_rotor_mw) / res_from_paper.P_loss_rotor_mw:.2f}%")
+    print(f"Core Losses: {res.P_loss_core_mw:.4f} MW, Expected: {res_from_paper.P_loss_core_mw:.4f} MW.")
+    print(f"Constant Losses: {res.P_loss_const_mw:.4f} MW, Expected: {res_from_paper.P_loss_const_mw:.4f} MW.") 
+
+print_results("Operating point #1", res_1, res_1_from_paper)
+print_results("Operating point #2", res_2, res_2_from_paper)
+print_results("Operating point #3", res_3, res_3_from_paper)
+print_results("Operating point #4", res_4, res_4_from_paper)
+print_results("Operating point #5", res_5, res_5_from_paper)
+print_results("Operating point #6", res_6, res_6_from_paper)
+print_results("Operating point #7", res_7, res_7_from_paper)
+print_results("Operating point #8", res_8, res_8_from_paper)

@@ -76,7 +76,6 @@ class NonLinearSaturationModel1(SaturationBaseClass):
         V_g_pu = branch_res.V_g_kv / self.V_base
 
         E_q, E_p = self._calc_internal_voltages(P_g_pu, Q_g_pu, V_g_pu)
-
         I_f = (E_q - E_p)/self.b_v + self.k*(E_p + self.C_m * E_p**self.n) 
         return I_f/self.I_f_nom 
     
