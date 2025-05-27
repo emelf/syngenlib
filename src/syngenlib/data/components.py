@@ -124,8 +124,8 @@ class TransformerDataclass:
     P_Cu: float
     I_E: float
     P_Fe: float
-    tap_ratio: Optional[float] = 1.0
-    Z_lv_ratio: Optional[float] = 0.5
+    tap_ratio: float = 1.0
+    Z_lv_ratio: float = 0.5
 
     def __post_init__(self):
         """
