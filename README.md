@@ -38,6 +38,14 @@ The data modelling of `SynGenLib` is illustrated in the figure below. The only m
 
 Dependencies for SynGenLib are listed in the TOML file. The notable tools are `numpy` and `scipy`. If you run examples, `matplotlib` is needed.
 
+### Roadmap
+
+SynGenLib is per summer 2025 under active use and development. It is likely that modifications and changes to the source code is not backwards compatible. The following list summarizes possible future additions to SynGenLib.
+
+- Improve the saturation modelling and add more of-the-shelf models
+- Add built-in optimizer functions for optimizing generator and plant operating point
+- Expand the calculation to allow for more than one generator at the LV side of the step-up transformer
+
 ## Authors
 
 - **Emil G. Melfald**, University of South-Eastern Norway
